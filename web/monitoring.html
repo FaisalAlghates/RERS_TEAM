@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring | RERS System</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
+            authDomain: "rersweb.firebaseapp.com",
+            projectId: "rersweb",
+            storageBucket: "rersweb.firebasestorage.app",
+            messagingSenderId: "432558250053",
+            appId: "1:432558250053:web:07fc91665244a2d93feb2c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Load cameras from Firestore
+        async function loadCameras() {
+            const camerasContainer = document.getElementById("cameraGrid");
+            camerasContainer.innerHTML = "<p>Loading Cameras...</p>"; // Loading placeholder
+
+            const querySnapshot = await getDocs(collection(db, "buildings"));
+            let camerasHTML = "";
+            querySnapshot.forEach((doc) => {
+                const building = doc.data();
+                if (building.cameras) {
+                    building.cameras.forEach((camera) => {
+                        if (camera.primaryCamera) {
+                            camerasHTML += `
+                                <div class="camera-feed">
+                                    <iframe src="${camera.cameraURL}" width="100%" height="250px" frameborder="0" allowfullscreen></iframe>
+                                </div>`;
+                        }
+                    });
+                }
+            });
+
+            camerasContainer.innerHTML = camerasHTML || "<p>No cameras available</p>";
+        }
+
+        // Load sensors from Firestore
+        async function loadSensors() {
+            const sensorList = document.getElementById("sensorList");
+            sensorList.innerHTML = "<p>Loading Sensors...</p>"; // Loading placeholder
+
+            const querySnapshot = await getDocs(collection(db, "buildings"));
+            let sensorsHTML = "";
+            querySnapshot.forEach((doc) => {
+                const building = doc.data();
+                if (building.sensors) {
+                    building.sensors.forEach((sensor) => {
+                        if (sensor.primarySensor) {
+                            sensorsHTML += `
+                                <div class="sensor-item ${sensor.status}">
+                                    <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location} - Risk Level: ${sensor.riskLevel}
+                                </div>`;
+                        }
+                    });
+                }
+            });
+
+            sensorList.innerHTML = sensorsHTML || "<p>No sensors available</p>";
+        }
+
+        // Load cameras & sensors on page load
+        window.onload = () => {
+            loadCameras();
+            loadSensors();
+        };
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2a2a2a, #000);
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+            border-right: 2px solid #ff0000;
+        }
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+        .sidebar nav ul li {
+            padding: 15px 0;
+            text-align: center;
+        }
+        .sidebar nav ul li a {
+            color: #ff0000;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .content {
+            margin-left: 270px;
+            padding: 40px;
+            width: calc(100% - 270px);
+            text-align: center;
+            overflow-y: auto;
+        }
+        .monitor-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            width: 95%;
+            max-width: 1400px;
+            margin: auto;
+        }
+        .camera-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .camera-feed {
+            background: black;
+            width: 100%;
+            height: 250px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .sensor-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        select, input {
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 200px;
+        }
+
+    .sensor-controls label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    }
+
+    select {
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    width: 200px;
+    transition: all 0.3s ease;
+    }
+
+    select:hover {
+    background: rgba(255, 255, 255, 0.3);
+    }
+
+    select option {
+    background: #333;
+    color: #fff;
+    padding: 10px;
+    }
+
+    input {
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    width: 220px;
+    transition: all 0.3s ease;
+    }
+
+    input:focus {
+        background: rgba(255, 255, 255, 0.3);
+        outline: none;
+    }
+
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="../web/dashboard.htm">dashboard</a></li>
+                <li><a href="../web/add_building.htm">Add Buildings</a></li>
+                <li><a href="../web/monitoring.html">Monitoring</a></li>
+                <li><a href="../web/reports.html">Reports</a></li>
+                <li><a href="../web/payment .htm">Payment</a></li>
+                <li><a href="../web/US.htm">About Us</a></li>
+                <li><a href="../web/logout.htm">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+    
+    <div class="content">
+        <div class="monitor-container">
+            <h2>Monitoring Dashboard</h2>
+
+            <h3>Live Primary Cameras</h3>
+            <div class="camera-grid" id="cameraGrid">
+                <p>Loading Cameras...</p>
+            </div>
+            
+            <h3>Primary Sensors</h3>
+            <div class="sensor-controls">
+                <label for="sensorFilter">Filter:</label>
+                <select id="sensorFilter">
+                    <option value="all">All Sensors</option>
+                    <option value="active">Active Sensors</option>
+                    <option value="inactive">Inactive Sensors</option>
+                </select>
+                <label for="searchSensorInput">Search:</label>
+                <input type="text" id="searchSensorInput" placeholder="Search for a sensor..." />
+            </div>
+            
+            <div class="sensor-list" id="sensorList">
+                <p>Loading Sensors...</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
