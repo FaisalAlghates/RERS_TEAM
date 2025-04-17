@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment | RERS System</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2a2a2a, #000);
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+            border-right: 2px solid #ff0000;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar nav ul li {
+            padding: 15px 0;
+            text-align: center;
+        }
+
+        .sidebar nav ul li a {
+            color: #ff0000;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+            transition: 0.3s;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .sidebar nav ul li a:hover {
+            background: rgba(255, 0, 0, 0.2);
+            color: #fff;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 40px;
+            width: calc(100% - 270px);
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .payment-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .summary, .payment-form {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        .payment-methods label {
+            display: flex;
+            flex-direction: column;
+            float: left;
+            margin-left: 35px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        
+
+        .hidden { display: none; }
+
+        .pay-button {
+            padding: 15px;
+            background: red;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .pay-button:hover {
+            background: darkred;
+        }
+        .payment-form {
+            width: 100%;
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .payment-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="../web/dashboard.htm">dashboard</a></li>
+                <li><a href="../web/add_building.htm">Add Buildings</a></li>
+                <li><a href="../web/monitoring.html">Monitoring</a></li>
+                <li><a href="../web/reports.html">Reports</a></li>
+                <li><a href="../web/payment .htm">Payment</a></li>
+                <li><a href="../web/US.htm">About Us</a></li>
+                <li><a href="../web/logout.htm">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="content">
+        <div class="payment-container">
+            <h2>Complete Your Payment</h2>
+            <div class="summary">
+                <div class="summary-item"><span>Number of Cameras:</span> <span id="cameraCount">50</span></div>
+                <div class="summary-item"><span>Number of Sensors:</span> <span id="sensorCount">100</span></div>
+                <div class="summary-item"><span>Total Price:</span> <span id="totalPrice">$35000.00</span></div>
+            </div>
+            <h3>Select Payment Method</h3>
+            <div class="payment-methods">
+                <label><input type="radio" name="payment" value="credit-card" onclick="showPaymentForm('card')"> Credit Card</label>
+                <label><input type="radio" name="payment" value="paypal" onclick="showPaymentForm('paypal')"> PayPal</label>
+                <label><input type="radio" name="payment" value="bank-transfer" onclick="showPaymentForm('bank')"> Bank Transfer</label>
+            </div>
+
+            <div id="cardForm" class="payment-form hidden">
+                <input type="text" placeholder="Full Name" required>
+                <input type="text" placeholder="Card Number" required>
+                <input type="text" placeholder="Expiry Date (MM/YY)" required>
+                <input type="text" placeholder="CVV" required>
+                <input type="text" placeholder="Billing Address" required>
+            </div>
+            
+            <div id="paypalForm" class="payment-form hidden">
+                <input type="text" placeholder="PayPal Email" required>
+            </div>
+
+            <div id="bankForm" class="payment-form hidden">
+                <p>Company Name: XYZ Corporation</p>
+                <p>Bank: ABC Bank</p>
+                <p>Account Number: 1234567890</p>
+                <p>IBAN: ABCD1234567890</p>
+            </div>
+
+            <button class="pay-button" onclick="confirmPayment()">Confirm Payment</button>
+        </div>
+    </div>
+
+    <script type="module" src="../JS/firebase.js"></script>
+
+    <script>
+        function showPaymentForm(method) {
+            document.querySelectorAll('.payment-form').forEach(form => form.classList.add("hidden"));
+            document.getElementById(method + "Form").classList.remove("hidden");
+        }
+    </script>
+</body>
+</html>

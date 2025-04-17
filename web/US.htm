@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | RERS System</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2a2a2a, #000);
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+            border-right: 2px solid #ff0000;
+        }
+
+        .user-info {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.2);
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+
+        .user-info h3 {
+            color: #ff0000;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar nav ul li {
+            padding: 15px 0;
+            text-align: center;
+        }
+
+        .sidebar nav ul li a {
+            color: #ff0000;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 40px;
+            width: calc(100% - 270px);
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .about-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            text-align: center;
+            width: 90%;
+            max-width: 800px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .contact-info {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .contact-form {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .contact-form input, .contact-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .submit-button {
+            padding: 15px;
+            background: red;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .submit-button:hover {
+            background: darkred;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="user-info">
+            <h3 id="userName">Loading...</h3>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="../web/dashboard.htm">dashboard</a></li>
+                <li><a href="../web/add_building.htm">Add Buildings</a></li>
+                <li><a href="../web/monitoring.html">Monitoring</a></li>
+                <li><a href="../web/reports.html">Reports</a></li>
+                <li><a href="../web/payment .htm">Payment</a></li>
+                <li><a href="../web/US.htm">About Us</a></li>
+                <li><a href="../web/logout.htm">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="content">
+        <div class="about-container">
+            <h2>About Our Company</h2>
+            <p>We specialize in advanced security and monitoring systems, providing real-time insights and automated reports for various industries.</p>
+
+            <div class="contact-info">
+                <h3>Contact Information</h3>
+                <p><strong>Email:</strong> alghatesfaisal@gmail.com</p>
+                <p><strong>Phone:</strong> 053 588 1035</p>
+                <p><strong>Address:</strong> Al Badr Tower, 4th floor, Office 88, Tahlia Street, Jeddah, Saudi Arabia</p>
+            </div>
+
+            <div class="contact-form">
+                <h3>Send Us a Message</h3>
+                <input type="text" id="name" placeholder="Your Name" required>
+                <input type="email" id="email" placeholder="Your Email" required>
+                <textarea id="message" placeholder="Your Message" rows="4" required></textarea>
+                <button class="submit-button" onclick="sendMessage()">Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
+            authDomain: "rersweb.firebaseapp.com",
+            projectId: "rersweb",
+            storageBucket: "rersweb.firebasestorage.app",
+            messagingSenderId: "432558250053",
+            appId: "1:432558250053:web:07fc91665244a2d93feb2c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            const userNameElement = document.getElementById("userName");
+            if (user) {
+                userNameElement.textContent = `Welcome, ${user.displayName || "User"}`;
+            } else {
+                userNameElement.textContent = "Not Logged In";
+            }
+        });
+
+        async function sendMessage() {
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const message = document.getElementById("message").value;
+
+            if (!name || !email || !message) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "messages"), {
+                    name: name,
+                    email: email,
+                    message: message,
+                    timestamp: new Date()
+                });
+
+                alert("✅ Message sent successfully!");
+                document.getElementById("name").value = "";
+                document.getElementById("email").value = "";
+                document.getElementById("message").value = "";
+            } catch (error) {
+                alert("❌ Failed to send message. Try again.");
+            }
+        }
+    </script>
+</body>
+</html>

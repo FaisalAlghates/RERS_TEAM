@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout | RERS System</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .logout-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            width: 90%;
+            max-width: 400px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .logout-container h2 {
+            margin-bottom: 20px;
+        }
+
+        .logout-button {
+            padding: 15px;
+            background: red;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .logout-button:hover {
+            background: darkred;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="logout-container">
+        <h2>Are you sure you want to logout?</h2>
+        <button class="logout-button" id="logoutBtn">Logout</button>
+    </div>
+
+    <script type="module">
+        // 🔹 Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+        // 🔹 Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
+            authDomain: "rersweb.firebaseapp.com",
+            databaseURL: "https://rersweb-default-rtdb.firebaseio.com",
+            projectId: "rersweb",
+            storageBucket: "rersweb.firebasestorage.app",
+            messagingSenderId: "432558250053",
+            appId: "1:432558250053:web:07fc91665244a2d93feb2c",
+            measurementId: "G-WEK79FH0J6"
+        };
+
+        // 🔹 Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // 🔹 Logout Function
+        document.getElementById("logoutBtn").addEventListener("click", async () => {
+            try {
+                await signOut(auth);
+                alert("✅ Logged out successfully.");
+                window.location.href = "../web/login Page.html"; // Redirect to dashboard
+            } catch (error) {
+                alert("❌ Logout failed: " + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
