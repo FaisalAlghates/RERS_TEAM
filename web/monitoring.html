@@ -28,10 +28,28 @@
         let cachedCameras = null;
         let cachedSensors = null;
 
+        // Convert YouTube URL to embed format
+        function convertToEmbedUrl(url) {
+            if (!url) return null;
+            
+            // If already an embed URL, return as-is
+            if (url.includes('youtube.com/embed/')) {
+                return url;
+            }
+            
+            // Extract video ID from various YouTube URL formats
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            const videoId = (match && match[2].length === 11) ? match[2] : null;
+            
+            return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+        }
+
         // Validate camera URL
         const isValidURL = (url) => {
             try {
                 new URL(url);
+                // Allow YouTube URLs and other HTTPS URLs
                 return url.startsWith("https://");
             } catch {
                 return false;
@@ -56,10 +74,11 @@
 
                     // Check for top-level url and isPrimary as a fallback
                     if (building.url && building.isPrimary && isValidURL(building.url)) {
+                        const embedUrl = convertToEmbedUrl(building.url);
                         camerasHTML += `
                             <div class="camera-feed">
                                 <h4>Main Camera (${building.location || "Unknown"})</h4>
-                                <iframe src="${building.url}" width="100%" height="250px" frameborder="0" allowfullscreen></iframe>
+                                <iframe src="${embedUrl}" width="100%" height="250px" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             </div>`;
                     }
 
@@ -67,10 +86,11 @@
                     if (building.cameras && Array.isArray(building.cameras)) {
                         building.cameras.forEach((camera) => {
                             if (camera.primaryCamera && isValidURL(camera.cameraURL)) {
+                                const embedUrl = convertToEmbedUrl(camera.cameraURL);
                                 camerasHTML += `
                                     <div class="camera-feed">
                                         <h4>${camera.name || "Primary Camera"} (${camera.location || "Unknown"})</h4>
-                                        <iframe src="${camera.cameraURL}" width="100%" height="250px" frameborder="0" allowfullscreen></iframe>
+                                        <iframe src="${embedUrl}" width="100%" height="250px" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                     </div>`;
                             }
                         });
@@ -253,6 +273,10 @@
         .camera-feed h4 {
             margin: 0 0 10px;
             font-size: 16px;
+        }
+        .camera-feed iframe {
+            border: none;
+            border-radius: 8px;
         }
         .sensor-controls {
             display: flex;
