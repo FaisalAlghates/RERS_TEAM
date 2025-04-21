@@ -131,7 +131,7 @@
                 <li><a href="..//web/add_building.htm">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
                 <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment.htm">Payment</a></li>
+                <li><a href="../web/payment .htm">Payment</a></li>
                 <li><a href="../web/US.htm">About Us</a></li>
                 <li><a href="../web/logout.htm">Logout</a></li>
             </ul>
@@ -181,9 +181,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, updateDoc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -192,16 +192,16 @@
             messagingSenderId: "432558250053",
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
+    
         const hasGps = document.getElementById('hasGps');
         const noGps = document.getElementById('noGps');
         const riskLevelGroup = document.getElementById('riskLevelGroup');
         const noGpsFields = document.getElementById('noGpsFields');
-
+    
         hasGps.addEventListener('change', function() {
             if (this.checked) {
                 noGps.checked = false;
@@ -211,7 +211,7 @@
                 riskLevelGroup.classList.add('hidden');
             }
         });
-
+    
         noGps.addEventListener('change', function() {
             if (this.checked) {
                 hasGps.checked = false;
@@ -222,7 +222,7 @@
                 riskLevelGroup.classList.add('hidden');
             }
         });
-
+    
         async function populateBuildingData() {
             const buildingId = localStorage.getItem('currentBuildingId');
             if (buildingId) {
@@ -242,39 +242,63 @@
                 }
             }
         }
-
+    
         window.addSensor = function() {
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
                     alert("You must be logged in to add a sensor!");
                     return;
                 }
-
+    
                 const buildingId = localStorage.getItem('currentBuildingId');
+                if (!buildingId) {
+                    alert("No building selected. Please add a building first.");
+                    window.location.href = 'add_building.htm';
+                    return;
+                }
+    
+                const sensorType = document.getElementById("sensorType").value;
+                const riskLevel = document.getElementById("riskLevel").value;
+                const isPrimary = document.getElementById("primarySensor").checked;
+    
+                if ((hasGps.checked || noGps.checked) && !riskLevel) {
+                    alert("Please enter a risk level (1-5)!");
+                    return;
+                }
+                if (noGps.checked && !document.getElementById("sensorLocation").value.trim()) {
+                    alert("Please enter a sensor location!");
+                    return;
+                }
+    
                 const sensorData = {
-                    type: document.getElementById("sensorType").value,
-                    riskLevel: document.getElementById("riskLevel").value,
-                    isPrimary: document.getElementById("primarySensor").checked
+                    type: sensorType,
+                    riskLevel: riskLevel ? parseInt(riskLevel) : null,
+                    isPrimary
                 };
-
+    
                 if (hasGps.checked) {
                     sensorData.hasGps = true;
                 } else if (noGps.checked) {
                     sensorData.hasGps = false;
-                    sensorData.location = document.getElementById("sensorLocation").value;
+                    sensorData.location = document.getElementById("sensorLocation").value.trim();
                     sensorData.buildingName = document.getElementById("buildingName").value;
                     sensorData.floor = document.getElementById("floorNumber").value;
                 }
-
-                const buildingRef = doc(db, "buildings", buildingId);
-                await updateDoc(buildingRef, {
-                    sensors: arrayUnion(sensorData)
-                });
-                
-                window.location.href = 'add_camera.html';
+    
+                try {
+                    const buildingRef = doc(db, "buildings", buildingId);
+                    await updateDoc(buildingRef, {
+                        sensors: arrayUnion(sensorData)
+                    });
+                    alert("Sensor added successfully!");
+                    window.location.href = 'add_camera.html';
+                } catch (error) {
+                    console.error("Error adding sensor:", error);
+                    alert("Failed to add sensor. Please try again.");
+                }
             });
         }
-
+    
         populateBuildingData();
     </script>
 </body>
