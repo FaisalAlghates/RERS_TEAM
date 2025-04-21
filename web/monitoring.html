@@ -7,7 +7,6 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
     <script type="module">
-        // Import Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
@@ -28,55 +27,97 @@
         // Load cameras from Firestore
         async function loadCameras() {
             const camerasContainer = document.getElementById("cameraGrid");
-            camerasContainer.innerHTML = "<p>Loading Cameras...</p>"; // Loading placeholder
+            camerasContainer.innerHTML = "<p>Loading Cameras...</p>";
 
-            const querySnapshot = await getDocs(collection(db, "buildings"));
-            let camerasHTML = "";
-            querySnapshot.forEach((doc) => {
-                const building = doc.data();
-                if (building.cameras) {
-                    building.cameras.forEach((camera) => {
-                        if (camera.primaryCamera) {
-                            camerasHTML += `
-                                <div class="camera-feed">
-                                    <iframe src="${camera.cameraURL}" width="100%" height="250px" frameborder="0" allowfullscreen></iframe>
-                                </div>`;
-                        }
-                    });
-                }
-            });
-
-            camerasContainer.innerHTML = camerasHTML || "<p>No cameras available</p>";
+            try {
+                const querySnapshot = await getDocs(collection(db, "buildings"));
+                let camerasHTML = "";
+                querySnapshot.forEach((doc) => {
+                    const building = doc.data();
+                    if (building.cameras) {
+                        building.cameras.forEach((camera) => {
+                            if (camera.primaryCamera) {
+                                camerasHTML += `
+                                    <div class="camera-feed">
+                                        <h4>${camera.name || "Primary Camera"} (${camera.location || "Unknown"})</h4>
+                                        <iframe src="${camera.cameraURL}" width="100%" height="250px" frameborder="0" allowfullscreen></iframe>
+                                    </div>`;
+                            }
+                        });
+                    }
+                });
+                camerasContainer.innerHTML = camerasHTML || "<p>No primary cameras available</p>";
+            } catch (error) {
+                console.error("Error loading cameras:", error);
+                camerasContainer.innerHTML = "<p>Error loading cameras</p>";
+            }
         }
 
         // Load sensors from Firestore
-        async function loadSensors() {
+        async function loadSensors(filter = "all", searchQuery = "") {
             const sensorList = document.getElementById("sensorList");
-            sensorList.innerHTML = "<p>Loading Sensors...</p>"; // Loading placeholder
+            sensorList.innerHTML = "<p>Loading Sensors...</p>";
 
-            const querySnapshot = await getDocs(collection(db, "buildings"));
-            let sensorsHTML = "";
-            querySnapshot.forEach((doc) => {
-                const building = doc.data();
-                if (building.sensors) {
-                    building.sensors.forEach((sensor) => {
-                        if (sensor.primarySensor) {
-                            sensorsHTML += `
-                                <div class="sensor-item ${sensor.status}">
-                                    <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location} - Risk Level: ${sensor.riskLevel}
-                                </div>`;
-                        }
-                    });
-                }
+            try {
+                const querySnapshot = await getDocs(collection(db, "buildings"));
+                let sensorsHTML = "";
+                querySnapshot.forEach((doc) => {
+                    const building = doc.data();
+                    if (building.sensors) {
+                        building.sensors.forEach((sensor) => {
+                            if (sensor.primarySensor) {
+                                // Apply filter
+                                if (filter !== "all" && sensor.status !== filter) return;
+
+                                // Apply search
+                                const searchString = `${sensor.type} ${sensor.location} ${sensor.riskLevel}`.toLowerCase();
+                                if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
+
+                                // Determine danger/normal state
+                                const state = sensor.riskLevel === "high" ? "Danger" : "Normal";
+
+                                sensorsHTML += `
+                                    <div class="sensor-item ${sensor.status} ${state.toLowerCase()}">
+                                        <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location}<br>
+                                        Status: ${sensor.status} | State: ${state} | Risk Level: ${sensor.riskLevel}<br>
+                                        Activated: ${sensor.activated ? "Yes" : "No"}<br>
+                                        Configuration: 
+                                        <ul>
+                                            <li>Threshold: ${sensor.threshold || "N/A"}</li>
+                                            <li>Last Reading: ${sensor.lastReading || "N/A"}</li>
+                                            <li>Other: ${JSON.stringify(sensor.otherConfig || {}, null, 2)}</li>
+                                        </ul>
+                                    </div>`;
+                            }
+                        });
+                    }
+                });
+                sensorList.innerHTML = sensorsHTML || "<p>No primary sensors available</p>";
+            } catch (error) {
+                console.error("Error loading sensors:", error);
+                sensorList.innerHTML = "<p>Error loading sensors</p>";
+            }
+        }
+
+        // Event listeners for filter and search
+        function setupEventListeners() {
+            const sensorFilter = document.getElementById("sensorFilter");
+            const searchSensorInput = document.getElementById("searchSensorInput");
+
+            sensorFilter.addEventListener("change", () => {
+                loadSensors(sensorFilter.value, searchSensorInput.value);
             });
 
-            sensorList.innerHTML = sensorsHTML || "<p>No sensors available</p>";
+            searchSensorInput.addEventListener("input", () => {
+                loadSensors(sensorFilter.value, searchSensorInput.value);
+            });
         }
 
         // Load cameras & sensors on page load
         window.onload = () => {
             loadCameras();
             loadSensors();
+            setupEventListeners();
         };
     </script>
 
@@ -144,13 +185,18 @@
         .camera-feed {
             background: black;
             width: 100%;
-            height: 250px;
+            height: 300px;
             border-radius: 10px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
+        }
+        .camera-feed h4 {
+            margin: 0 0 10px;
+            font-size: 16px;
         }
         .sensor-controls {
             display: flex;
@@ -158,71 +204,74 @@
             gap: 10px;
             margin-bottom: 15px;
         }
+        .sensor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .sensor-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .sensor-item.active {
+            border-left: 4px solid #00ff00;
+        }
+        .sensor-item.inactive {
+            border-left: 4px solid #ff0000;
+        }
+        .sensor-item.danger {
+            background: rgba(255, 0, 0, 0.2);
+        }
+        .sensor-item.normal {
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .sensor-item ul {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+        .sensor-item li {
+            list-style: disc;
+        }
         select, input {
             padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 16px;
             border: none;
             background: rgba(255, 255, 255, 0.2);
             color: #fff;
-            width: 200px;
+            width: 220px;
+            transition: all 0.3s ease;
         }
-
-    .sensor-controls label {
-    font-size: 16px;
-    font-weight: bold;
-    color: #fff;
-    }
-
-    select {
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 16px;
-    border: none;
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    cursor: pointer;
-    width: 200px;
-    transition: all 0.3s ease;
-    }
-
-    select:hover {
-    background: rgba(255, 255, 255, 0.3);
-    }
-
-    select option {
-    background: #333;
-    color: #fff;
-    padding: 10px;
-    }
-
-    input {
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 16px;
-    border: none;
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    width: 220px;
-    transition: all 0.3s ease;
-    }
-
-    input:focus {
-        background: rgba(255, 255, 255, 0.3);
-        outline: none;
-    }
-
+        select:hover, input:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        select option {
+            background: #333;
+            color: #fff;
+        }
+        input:focus {
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+        }
+        label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
     <aside class="sidebar">
         <nav>
             <ul>
-                <li><a href="../web/dashboard.htm">dashboard</a></li>
+                <li><a href="../web/dashboard.htm">Dashboard</a></li>
                 <li><a href="../web/add_building.htm">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
                 <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment .htm">Payment</a></li>
+                <li><a href="../web/payment.htm">Payment</a></li>
                 <li><a href="../web/US.htm">About Us</a></li>
                 <li><a href="../web/logout.htm">Logout</a></li>
             </ul>
