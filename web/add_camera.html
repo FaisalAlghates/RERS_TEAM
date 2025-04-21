@@ -117,7 +117,7 @@
                 <li><a href="../web/add_building.html">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
                 <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment.htm">Payment</a></li>
+                <li><a href="../web/payment .htm">Payment</a></li>
                 <li><a href="../web/US.htm">About Us</a></li>
                 <li><a href="../web/logout.htm">Logout</a></li>
             </ul>
@@ -139,9 +139,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -150,33 +150,60 @@
             messagingSenderId: "432558250053",
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
+    
         window.addCamera = function() {
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
                     alert("You must be logged in to add a camera!");
                     return;
                 }
-
+    
                 const buildingId = localStorage.getItem('currentBuildingId');
+                if (!buildingId) {
+                    alert("No building selected. Please add a building first.");
+                    window.location.href = 'add_building.htm';
+                    return;
+                }
+    
+                const cameraLocation = document.getElementById("cameraLocation").value.trim();
+                const cameraURL = document.getElementById("cameraURL").value.trim();
+                const isPrimary = document.getElementById("primaryCamera").checked;
+    
+                // Input validation
+                if (!cameraLocation || !cameraURL) {
+                    alert("Please fill in all camera fields!");
+                    return;
+                }
+                // Basic URL validation (ensure it starts with http:// or https://)
+                if (!/^https?:\/\//i.test(cameraURL)) {
+                    alert("Please enter a valid URL starting with http:// or https://");
+                    return;
+                }
+    
                 const cameraData = {
-                    location: document.getElementById("cameraLocation").value,
-                    url: document.getElementById("cameraURL").value,
-                    isPrimary: document.getElementById("primaryCamera").checked
+                    location: cameraLocation,
+                    url: cameraURL,
+                    isPrimary: isPrimary,
+                    addedBy: user.email,
+                    timestamp: new Date().toISOString() // For sorting or auditing
                 };
-
-                const buildingRef = doc(db, "buildings", buildingId);
-                await updateDoc(buildingRef, {
-                    cameras: arrayUnion(cameraData)
-                });
-                
-                alert("✅ Building setup completed!");
-                localStorage.removeItem('currentBuildingId');
-                window.location.href = 'dashboard.htm';
+    
+                try {
+                    const buildingRef = doc(db, "buildings", buildingId);
+                    await updateDoc(buildingRef, {
+                        cameras: arrayUnion(cameraData)
+                    });
+                    alert("✅ Camera added successfully!");
+                    localStorage.removeItem('currentBuildingId');
+                    window.location.href = 'dashboard.htm';
+                } catch (error) {
+                    console.error("Error adding camera:", error);
+                    alert("Failed to add camera. Please try again.");
+                }
             });
         }
     </script>

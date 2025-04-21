@@ -126,7 +126,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -135,31 +135,49 @@
             messagingSenderId: "432558250053",
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
+    
         window.addBuilding = function() {
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
                     alert("You must be logged in to add a building!");
                     return;
                 }
-
+    
+                const buildingName = document.getElementById("buildingName").value.trim();
+                const location = document.getElementById("location").value.trim();
+                const floors = document.getElementById("floors").value;
+    
+                // Input validation
+                if (!buildingName || !location || !floors) {
+                    alert("Please fill in all fields!");
+                    return;
+                }
+                if (isNaN(floors) || floors <= 0) {
+                    alert("Number of floors must be a positive number!");
+                    return;
+                }
+    
                 const buildingData = {
-                    buildingName: document.getElementById("buildingName").value,
-                    location: document.getElementById("location").value,
-                    floors: document.getElementById("floors").value,
-                    addedBy: user.email
+                    buildingName,
+                    location,
+                    floors: parseInt(floors),
+                    addedBy: user.email,
+                    sensors: [], // Initialize empty arrays for sensors and cameras
+                    cameras: []
                 };
-
+    
                 try {
                     const docRef = await addDoc(collection(db, "buildings"), buildingData);
                     localStorage.setItem('currentBuildingId', docRef.id);
-                    window.location.href = 'add_sensor.html';
+                    alert("Building added successfully!");
+                    window.location.href = 'add_sensor.html'; // Redirect to camera page
                 } catch (error) {
-                    alert("Error adding building: " + error.message);
+                    console.error("Error adding building:", error);
+                    alert("Failed to add building. Please try again.");
                 }
             });
         }

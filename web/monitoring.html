@@ -24,19 +24,49 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Cache for cameras and sensors
+        let cachedCameras = null;
+        let cachedSensors = null;
+
+        // Validate camera URL
+        const isValidURL = (url) => {
+            try {
+                new URL(url);
+                return url.startsWith("https://");
+            } catch {
+                return false;
+            }
+        };
+
         // Load cameras from Firestore
         async function loadCameras() {
             const camerasContainer = document.getElementById("cameraGrid");
-            camerasContainer.innerHTML = "<p>Loading Cameras...</p>";
+            camerasContainer.innerHTML = '<p class="loading">Loading Cameras...</p>';
+
+            if (cachedCameras) {
+                camerasContainer.innerHTML = cachedCameras;
+                return;
+            }
 
             try {
                 const querySnapshot = await getDocs(collection(db, "buildings"));
                 let camerasHTML = "";
                 querySnapshot.forEach((doc) => {
                     const building = doc.data();
-                    if (building.cameras) {
+
+                    // Check for top-level url and isPrimary as a fallback
+                    if (building.url && building.isPrimary && isValidURL(building.url)) {
+                        camerasHTML += `
+                            <div class="camera-feed">
+                                <h4>Main Camera (${building.location || "Unknown"})</h4>
+                                <iframe src="${building.url}" width="100%" height="250px" frameborder="0" allowfullscreen></iframe>
+                            </div>`;
+                    }
+
+                    // Check for cameras array (original logic)
+                    if (building.cameras && Array.isArray(building.cameras)) {
                         building.cameras.forEach((camera) => {
-                            if (camera.primaryCamera) {
+                            if (camera.primaryCamera && isValidURL(camera.cameraURL)) {
                                 camerasHTML += `
                                     <div class="camera-feed">
                                         <h4>${camera.name || "Primary Camera"} (${camera.location || "Unknown"})</h4>
@@ -46,26 +76,46 @@
                         });
                     }
                 });
-                camerasContainer.innerHTML = camerasHTML || "<p>No primary cameras available</p>";
+                cachedCameras = camerasHTML || "<p>No primary cameras available</p>";
+                camerasContainer.innerHTML = cachedCameras;
             } catch (error) {
                 console.error("Error loading cameras:", error);
-                camerasContainer.innerHTML = "<p>Error loading cameras</p>";
+                camerasContainer.innerHTML = `<p>Error loading cameras: ${error.message}</p>`;
             }
         }
 
         // Load sensors from Firestore
         async function loadSensors(filter = "all", searchQuery = "") {
             const sensorList = document.getElementById("sensorList");
-            sensorList.innerHTML = "<p>Loading Sensors...</p>";
+            sensorList.innerHTML = '<p class="loading">Loading Sensors...</p>';
+
+            if (cachedSensors && filter === "all" && !searchQuery) {
+                sensorList.innerHTML = cachedSensors;
+                return;
+            }
 
             try {
                 const querySnapshot = await getDocs(collection(db, "buildings"));
                 let sensorsHTML = "";
                 querySnapshot.forEach((doc) => {
                     const building = doc.data();
+
+                    // Convert sensors object to array if necessary
+                    let sensorsArray = [];
                     if (building.sensors) {
-                        building.sensors.forEach((sensor) => {
-                            if (sensor.primarySensor) {
+                        if (Array.isArray(building.sensors)) {
+                            sensorsArray = building.sensors;
+                        } else if (typeof building.sensors === "object") {
+                            sensorsArray = Object.values(building.sensors);
+                        }
+                    }
+
+                    if (sensorsArray.length > 0) {
+                        sensorsArray.forEach((sensor) => {
+                            // Map isPrimary to primarySensor
+                            const isPrimarySensor = sensor.isPrimary !== undefined ? sensor.isPrimary : sensor.primarySensor;
+
+                            if (isPrimarySensor) {
                                 // Apply filter
                                 if (filter !== "all" && sensor.status !== filter) return;
 
@@ -74,13 +124,14 @@
                                 if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
 
                                 // Determine danger/normal state
-                                const state = sensor.riskLevel === "high" ? "Danger" : "Normal";
+                                const riskLevel = sensor.riskLevel === 1 ? "low" : sensor.riskLevel; // Map numeric riskLevel to string
+                                const state = riskLevel === "high" ? "Danger" : "Normal";
 
                                 sensorsHTML += `
-                                    <div class="sensor-item ${sensor.status} ${state.toLowerCase()}">
-                                        <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location}<br>
-                                        Status: ${sensor.status} | State: ${state} | Risk Level: ${sensor.riskLevel}<br>
-                                        Activated: ${sensor.activated ? "Yes" : "No"}<br>
+                                    <div class="sensor-item ${sensor.status || "unknown"} ${state.toLowerCase()}">
+                                        <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location || building.location || "Unknown"}<br>
+                                        Status: ${sensor.status || "unknown"} | State: ${state} | Risk Level: ${riskLevel}<br>
+                                        Activated: ${sensor.activated !== undefined ? (sensor.activated ? "Yes" : "No") : "N/A"}<br>
                                         Configuration: 
                                         <ul>
                                             <li>Threshold: ${sensor.threshold || "N/A"}</li>
@@ -92,10 +143,11 @@
                         });
                     }
                 });
+                cachedSensors = sensorsHTML || "<p>No primary sensors available</p>";
                 sensorList.innerHTML = sensorsHTML || "<p>No primary sensors available</p>";
             } catch (error) {
                 console.error("Error loading sensors:", error);
-                sensorList.innerHTML = "<p>Error loading sensors</p>";
+                sensorList.innerHTML = `<p>Error loading sensors: ${error.message}</p>`;
             }
         }
 
@@ -103,13 +155,17 @@
         function setupEventListeners() {
             const sensorFilter = document.getElementById("sensorFilter");
             const searchSensorInput = document.getElementById("searchSensorInput");
+            let debounceTimeout;
 
             sensorFilter.addEventListener("change", () => {
                 loadSensors(sensorFilter.value, searchSensorInput.value);
             });
 
             searchSensorInput.addEventListener("input", () => {
-                loadSensors(sensorFilter.value, searchSensorInput.value);
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    loadSensors(sensorFilter.value, searchSensorInput.value);
+                }, 300);
             });
         }
 
@@ -228,6 +284,9 @@
         .sensor-item.normal {
             background: rgba(0, 255, 0, 0.1);
         }
+        .sensor-item.unknown {
+            border-left: 4px solid #ff9900; /* Orange for unknown status */
+        }
         .sensor-item ul {
             margin: 10px 0 0 20px;
             padding: 0;
@@ -261,6 +320,46 @@
             font-weight: bold;
             color: #fff;
         }
+        .loading::before {
+            content: "";
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ff0000;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .camera-grid p, .sensor-list p {
+            color: #ff0000;
+            font-size: 18px;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        @media (max-width: 768px) {
+            .camera-grid {
+                grid-template-columns: 1fr;
+            }
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                box-shadow: none;
+                border-bottom: 2px solid #ff0000;
+                border-right: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -271,7 +370,7 @@
                 <li><a href="../web/add_building.htm">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
                 <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment.htm">Payment</a></li>
+                <li><a href="../web/payment .htm">Payment</a></li>
                 <li><a href="../web/US.htm">About Us</a></li>
                 <li><a href="../web/logout.htm">Logout</a></li>
             </ul>
@@ -284,7 +383,7 @@
 
             <h3>Live Primary Cameras</h3>
             <div class="camera-grid" id="cameraGrid">
-                <p>Loading Cameras...</p>
+                <p class="loading">Loading Cameras...</p>
             </div>
             
             <h3>Primary Sensors</h3>
@@ -300,7 +399,7 @@
             </div>
             
             <div class="sensor-list" id="sensorList">
-                <p>Loading Sensors...</p>
+                <p class="loading">Loading Sensors...</p>
             </div>
         </div>
     </div>

@@ -106,8 +106,6 @@
             font-size: 16px;
         }
 
-        
-
         .hidden { display: none; }
 
         .pay-button {
@@ -142,6 +140,17 @@
             background: rgba(255, 255, 255, 0.2);
             color: #fff;
         }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -161,11 +170,20 @@
 
     <div class="content">
         <div class="payment-container">
-            <h2>Complete Your Payment</h2>
+            <h2>Complete Your Subscription</h2>
             <div class="summary">
-                <div class="summary-item"><span>Number of Cameras:</span> <span id="cameraCount">50</span></div>
-                <div class="summary-item"><span>Number of Sensors:</span> <span id="sensorCount">100</span></div>
-                <div class="summary-item"><span>Total Price:</span> <span id="totalPrice">$35000.00</span></div>
+                <div class="summary-item">
+                    <span>Subscription Plan:</span>
+                    <select id="subscriptionPlan" onchange="updatePrice()">
+                        <option value="1-year">1 Year - $15,000.00</option>
+                        <option value="3-years">3 Years - $25,000.00</option>
+                        <option value="5-years">5 Years - $35,000.00</option>
+                    </select>
+                </div>
+                <div class="summary-item">
+                    <span>Total Price:</span>
+                    <span id="totalPrice">$15,000.00</span>
+                </div>
             </div>
             <h3>Select Payment Method</h3>
             <div class="payment-methods">
@@ -204,6 +222,22 @@
             document.querySelectorAll('.payment-form').forEach(form => form.classList.add("hidden"));
             document.getElementById(method + "Form").classList.remove("hidden");
         }
+
+        function updatePrice() {
+            const subscriptionPlan = document.getElementById("subscriptionPlan").value;
+            const totalPriceElement = document.getElementById("totalPrice");
+            if (subscriptionPlan === "1-year") {
+                totalPriceElement.textContent = "$15,000.00";
+            } else if (subscriptionPlan === "3-years") {
+                totalPriceElement.textContent = "$25,000.00";
+            } else if (subscriptionPlan === "5-years") {
+                totalPriceElement.textContent = "$35,000.00";
+            }
+        }
+
+        function confirmPayment() {
+            alert("Payment processing is not implemented in this demo.");
+        }
     </script>
-</body>
-</html>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'933f4081cafcd687',t:'MTc0NTI2MzM2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html> 
