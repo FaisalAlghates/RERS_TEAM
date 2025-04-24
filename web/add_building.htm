@@ -5,128 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Building | RERS System</title>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        body {
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            display: flex;
-            height: 100vh;
-        }
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(180deg, #2a2a2a, #000);
-            padding: 20px;
-            position: fixed;
-            height: 100vh;
-            box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
-            border-right: 2px solid #ff0000;
-        }
-        .sidebar nav ul {
-            list-style: none;
-            padding: 0;
-        }
-        .sidebar nav ul li {
-            padding: 15px 0;
-            text-align: center;
-        }
-        .sidebar nav ul li a {
-            color: #ff0000;
-            text-decoration: none;
-            font-size: 18px;
-            font-weight: bold;
-            display: block;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .content {
-            margin-left: 270px;
-            padding: 40px;
-            width: calc(100% - 270px);
-            text-align: center;
-            overflow-y: auto;
-        }
-        .form-container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
-            text-align: center;
-            width: 90%;
-            max-width: 800px;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .input-group {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .input-group input, .input-group select {
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            outline: none;
-        }
-        .form-container button {
-            width: 100%;
-            padding: 15px;
-            background: red;
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: 0.3s;
-            margin-top: 20px;
-        }
-        .form-container button:hover {
-            background: darkred;
-        }
-    </style>
-</head>
-<body>
-    <aside class="sidebar">
-        <nav>
-            <ul>
-                <li><a href="../web/dashboard.htm">dashboard</a></li>
-                <li><a href="../web/add_building.htm">Add Buildings</a></li>
-                <li><a href="../web/monitoring.html">Monitoring</a></li>
-                <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment .htm">Payment</a></li>
-                <li><a href="../web/US.htm">About Us</a></li>
-                <li><a href="../web/logout.htm">Logout</a></li>
-            </ul>
-        </nav>
-    </aside>
-
-    <div class="content">
-        <div class="form-container">
-            <h2>Add New Building</h2>
-            <div class="input-group"><input type="text" id="buildingName" placeholder="Building Name"></div>
-            <div class="input-group"><input type="text" id="location" placeholder="Building Location"></div>
-            <div class="input-group"><input type="number" id="floors" placeholder="Number of Floors"></div>
-            <button onclick="addBuilding()">Next: Add Sensors</button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    
+
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -135,24 +18,24 @@
             messagingSenderId: "432558250053",
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
-    
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-    
+
         window.addBuilding = function() {
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
                     alert("You must be logged in to add a building!");
                     return;
                 }
-    
+
                 const buildingName = document.getElementById("buildingName").value.trim();
                 const location = document.getElementById("location").value.trim();
                 const floors = document.getElementById("floors").value;
-    
-                // Input validation
-                if (!buildingName || !location || !floors) {
+                const domainNumber = document.getElementById("domainNumber").value.trim();
+
+                if (!buildingName || !location || !floors || !domainNumber) {
                     alert("Please fill in all fields!");
                     return;
                 }
@@ -160,27 +43,197 @@
                     alert("Number of floors must be a positive number!");
                     return;
                 }
-    
+
                 const buildingData = {
                     buildingName,
                     location,
                     floors: parseInt(floors),
+                    domainNumber,
                     addedBy: user.email,
-                    sensors: [], // Initialize empty arrays for sensors and cameras
-                    cameras: []
+                    sensors: [],
+                    cameras: [],
+                    timestamp: new Date().toISOString()
                 };
-    
+
                 try {
                     const docRef = await addDoc(collection(db, "buildings"), buildingData);
                     localStorage.setItem('currentBuildingId', docRef.id);
                     alert("Building added successfully!");
-                    window.location.href = 'add_sensor.html'; // Redirect to camera page
+                    window.location.href = 'add_sensor.html';
                 } catch (error) {
                     console.error("Error adding building:", error);
                     alert("Failed to add building. Please try again.");
                 }
             });
-        }
+        };
     </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, #1a1a1a 10%, #000 80%);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            height: 100vh;
+            perspective: 1000px;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2a2a2a, #000);
+            padding: 20px;
+            position: fixed;
+            height: 100%;
+            box-shadow: 5px 0 20px rgba(255, 0, 0, 0.6);
+            border-right: 2px solid #ff0000;
+            transform: translateZ(20px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .sidebar:hover {
+            transform: translateZ(30px);
+        }
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar nav ul li {
+            margin: 10px 0;
+        }
+        .sidebar nav ul li a {
+            color: #ff0000;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 700;
+            display: block;
+            padding: 12px;
+            border-radius: 8px;
+            transition: background 0.3s, transform 0.3s;
+        }
+        .sidebar nav ul li a:hover {
+            background: rgba(255, 0, 0, 0.3);
+            transform: translateZ(10px);
+        }
+        .content {
+            margin-left: 270px;
+            padding: 30px;
+            width: calc(100% - 270px);
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .form-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+            max-width: 600px;
+            width: 100%;
+            transform: translateZ(20px);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .form-container:hover {
+            transform: translateZ(30px);
+        }
+        .form-container h2 {
+            font-size: 24px;
+            text-shadow: 0 0 10px #ff0000;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .input-group input:hover, .input-group input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        .form-container button {
+            width: 100%;
+            padding: 12px;
+            background: #ff0000;
+            color: #fff;
+            font-weight: 700;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s, transform 0.3s;
+        }
+        .form-container button:hover {
+            background: #cc0000;
+            transform: translateZ(10px);
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                border-right: none;
+                border-bottom: 2px solid #ff0000;
+                box-shadow: none;
+            }
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+            .form-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="dashboard.htm">Dashboard</a></li>
+                <li><a href="add_building.htm">Add Buildings</a></li>
+                <li><a href="monitoring.html">Monitoring</a></li>
+                <li><a href="reports.html">Reports</a></li>
+                <li><a href="payment.htm">Payment</a></li>
+                <li><a href="about.htm">About Us</a></li>
+                <li><a href="logout.htm">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="content">
+        <div class="form-container">
+            <h2>Add New Building</h2>
+            <div class="input-group">
+                <input type="text" id="buildingName" placeholder="Building Name">
+            </div>
+            <div class="input-group">
+                <input type="text" id="location" placeholder="Location">
+            </div>
+            <div class="input-group">
+                <input type="number" id="floors" placeholder="Number of Floors" min="1">
+            </div>
+            <div class="input-group">
+                <input type="text" id="domainNumber" placeholder="Domain Number">
+            </div>
+            <button onclick="addBuilding()">Next: Add Sensors</button>
+        </div>
+    </div>
 </body>
 </html>
