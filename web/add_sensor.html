@@ -3,14 +3,370 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Add new sensors to a building in the RERS System.">
-    <title>Add Sensors | RERS System</title>
+    <title>Add Sensor | RERS System</title>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
+        :root {
+            --primary-color: #ff0000;
+            --secondary-color: #00ff00;
+            --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-gradient);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar-gradient);
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+            border-right: 2px solid var(--primary-color);
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar nav ul li {
+            padding: 15px 0;
+            text-align: center;
+        }
+
+        .sidebar nav ul li a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 40px;
+            width: calc(100% - 270px);
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        .form-container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            width: 90%;
+            max-width: 800px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .input-group {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-group input, .input-group select {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            outline: none;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .primary-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .form-container button {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+            margin-top: 20px;
+        }
+
+        .form-container button:hover {
+            background: darkred;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .sensor-quantity {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .sensor-quantity input {
+            width: 60px;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            text-align: center;
+        }
+
+        .connection-types {
+            width: 100%;
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .connection-type {
+            margin-bottom: 10px;
+        }
+
+        .connection-type label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .connection-type input {
+            margin-right: 10px;
+        }
+
+        .connection-details {
+            margin-left: 25px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .connection-details input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .risk-levels {
+            width: 100%;
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .risk-level {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .risk-level input {
+            margin-right: 10px;
+        }
+
+        .risk-level.low {
+            border-left: 4px solid #00ff00;
+        }
+
+        .risk-level.medium {
+            border-left: 4px solid #ffcc00;
+        }
+
+        .risk-level.high {
+            border-left: 4px solid #ff0000;
+        }
+
+        .risk-description {
+            font-size: 14px;
+            color: #aaa;
+            margin-left: 25px;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="../web/dashboard.htm">dashboard</a></li>
+                <li><a href="../web/add_building.htm">Add Buildings</a></li>
+                <li><a href="../web/monitoring_primary.html">Monitoring</a></li>
+                <li><a href="../web/reports.html">Reports</a></li>
+                <li><a href="../web/payment .htm">Payment</a></li>
+                <li><a href="../web/US.htm">About Us</a></li>
+                <li><a href="../web/logout.htm">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="content">
+        <div class="form-container">
+            <h2>Add New Sensors</h2>
+            
+            <div class="sensor-quantity">
+                <label for="sensorCount">Number of Sensors to Add:</label>
+                <input type="number" id="sensorCount" min="1" max="10" value="1">
+            </div>
+            
+            <div class="input-group">
+                <select id="sensorType">
+                    <option value="Temperature">Temperature Sensor</option>
+                    <option value="Motion">Motion Sensor</option>
+                    <option value="Smoke">Smoke Detector</option>
+                    <option value="Gas">Gas Sensor</option>
+                    <option value="Fire">Fire Alarm Sensor</option>
+                    <option value="Flood">Flood Sensor</option>
+                    <option value="Sound">Sound Sensor</option>
+                    <option value="Vibration">Vibration Sensor</option>
+                    <option value="Humidity">Humidity Sensor</option>
+                    <option value="Light">Light Sensor</option>
+                </select>
+            </div>
+            
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="hasGps" class="primary-checkbox">
+                <label for="hasGps">Built-in GPS in Sensor</label>
+            </div>
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="noGps" class="primary-checkbox">
+                <label for="noGps">Does not have built-in GPS</label>
+            </div>
+            
+            <div class="input-group hidden" id="riskLevelGroup">
+                <input type="number" id="riskLevel" placeholder="Risk Level (1-3)" min="1" max="3">
+            </div>
+            
+            <div class="input-group hidden" id="noGpsFields">
+                <input type="text" id="sensorLocation" placeholder="Sensor Location">
+                <select id="buildingName"></select>
+                <select id="floorNumber"></select>
+            </div>
+            
+            <div class="connection-types">
+                <h3>Connection Types</h3>
+                <div class="connection-type">
+                    <label><input type="checkbox" name="connection" value="url"> URL Connection</label>
+                    <div class="connection-details" id="urlConnection">
+                        <input type="text" placeholder="Enter URL">
+                    </div>
+                </div>
+                <div class="connection-type">
+                    <label><input type="checkbox" name="connection" value="api"> API Connection</label>
+                    <div class="connection-details" id="apiConnection">
+                        <input type="text" placeholder="API Endpoint">
+                        <input type="text" placeholder="API Key">
+                    </div>
+                </div>
+                <div class="connection-type">
+                    <label><input type="checkbox" name="connection" value="mqtt"> MQTT Connection</label>
+                    <div class="connection-details" id="mqttConnection">
+                        <input type="text" placeholder="MQTT Broker">
+                        <input type="text" placeholder="Topic">
+                    </div>
+                </div>
+                <div class="connection-type">
+                    <label><input type="checkbox" name="connection" value="websocket"> WebSocket Connection</label>
+                    <div class="connection-details" id="websocketConnection">
+                        <input type="text" placeholder="WebSocket URL">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="risk-levels">
+                <h3>Risk Level Configuration</h3>
+                <div class="risk-level low">
+                    <input type="radio" name="riskLevel" id="riskLow" value="1" checked>
+                    <label for="riskLow">Level 1 (Low Risk)</label>
+                </div>
+                <div class="risk-description" id="descLow">
+                    Initial danger level - Contacts technicians and maintenance workers via email when activated.
+                </div>
+                
+                <div class="risk-level medium">
+                    <input type="radio" name="riskLevel" id="riskMedium" value="2">
+                    <label for="riskMedium">Level 2 (Medium Risk)</label>
+                </div>
+                <div class="risk-description" id="descMedium">
+                    Must be addressed immediately - Contacts civil defense, ambulance, special forces, project manager, and workers via email.
+                </div>
+                
+                <div class="risk-level high">
+                    <input type="radio" name="riskLevel" id="riskHigh" value="3">
+                    <label for="riskHigh">Level 3 (High Risk)</label>
+                </div>
+                <div class="risk-description" id="descHigh">
+                    Critical danger - Contacts all relevant authorities completely via email with all site information.
+                </div>
+            </div>
+            
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="primarySensor" class="primary-checkbox">
+                <label for="primarySensor">Mark as Primary Sensor</label>
+            </div>
+            
+            <button onclick="addSensor()">Next: Add Cameras</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, updateDoc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -19,92 +375,57 @@
             messagingSenderId: "432558250053",
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
-        function addSensorRow() {
-            const container = document.getElementById('sensorRows');
-            const row = document.createElement('div');
-            row.className = 'sensor-row';
-            row.innerHTML = `
-                <div class="input-group">
-                    <label for="sensor-type-${Date.now()}">Sensor Type</label>
-                    <select class="sensor-type" id="sensor-type-${Date.now()}" aria-label="Sensor Type">
-                        <option value="Temperature">Temperature</option>
-                        <option value="Motion">Motion</option>
-                        <option value="Smoke">Smoke</option>
-                        <option value="Gas">Gas</option>
-                        <option value="Fire">Fire</option>
-                        <option value="Flood">Flood</option>
-                        <option value="Sound">Sound</option>
-                        <option value="Vibration">Vibration</option>
-                        <option value="Humidity">Humidity</option>
-                        <option value="Light">Light</option>
-                        <option value="Air Quality">Air Quality</option>
-                        <option value="Pressure">Pressure</option>
-                        <option value="Proximity">Proximity</option>
-                        <option value="CO2">CO2</option>
-                        <option value="Radiation">Radiation</option>
-                        <option value="Tilt">Tilt</option>
-                        <option value="Strain">Strain</option>
-                        <option value="Leak">Leak</option>
-                        <option value="Voltage">Voltage</option>
-                        <option value="Current">Current</option>
-                        <option value="Flow">Flow</option>
-                        <option value="Wind Speed">Wind Speed</option>
-                        <option value="Dust">Dust</option>
-                        <option value="UV">UV</option>
-                        <option value="Infrared">Infrared</option>
-                        <option value="pH">pH</option>
-                        <option value="Soil Moisture">Soil Moisture</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="connection-type-${Date.now()}">Connection Type</label>
-                    <select class="connection-type" id="connection-type-${Date.now()}" aria-label="Connection Type">
-                        <option value="URL">URL (API)</option>
-                        <option value="Bluetooth">Bluetooth</option>
-                        <option value="WiFi">Wi-Fi</option>
-                        <option value="Zigbee">Zigbee</option>
-                        <option value="LoRa">LoRa</option>
-                        <option value="Ethernet">Ethernet</option>
-                        <option value="Z-Wave">Z-Wave</option>
-                        <option value="Cellular">Cellular (4G/5G)</option>
-                        <option value="NB-IoT">NB-IoT</option>
-                        <option value="Sigfox">Sigfox</option>
-                        <option value="RS-485">RS-485</option>
-                        <option value="Modbus">Modbus</option>
-                        <option value="CAN Bus">CAN Bus</option>
-                        <option value="USB">USB</option>
-                        <option value="Serial">Serial</option>
-                        <option value="MQTT">MQTT</option>
-                        <option value="CoAP">CoAP</option>
-                        <option value="Thread">Thread</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="connection-value-${Date.now()}">Connection Value</label>
-                    <input type="text" class="connection-value" id="connection-value-${Date.now()}" placeholder="e.g., URL, IP, or device ID" aria-required="true">
-                </div>
-                <div class="input-group">
-                    <label for="risk-level-${Date.now()}">Risk Level (1-3)</label>
-                    <input type="number" class="risk-level" id="risk-level-${Date.now()}" min="1" max="3" placeholder="1-3" aria-required="true">
-                </div>
-                <div class="input-group">
-                    <label for="unique-id-${Date.now()}">Unique ID</label>
-                    <input type="text" class="unique-id" id="unique-id-${Date.now()}" placeholder="Unique sensor ID" aria-required="true">
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" class="primary-sensor" id="primary-sensor-${Date.now()}" aria-label="Mark as Primary Sensor">
-                    <label for="primary-sensor-${Date.now()}">Primary</label>
-                </div>
-                <button type="button" class="remove-row" onclick="this.parentElement.remove()" aria-label="Remove Sensor Row">Remove</button>
-            `;
-            container.appendChild(row);
-        }
-
+    
+        const hasGps = document.getElementById('hasGps');
+        const noGps = document.getElementById('noGps');
+        const riskLevelGroup = document.getElementById('riskLevelGroup');
+        const noGpsFields = document.getElementById('noGpsFields');
+        
+        // Connection type toggles
+        const connectionCheckboxes = document.querySelectorAll('input[name="connection"]');
+        connectionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const detailsDiv = document.getElementById(`${this.value}Connection`);
+                detailsDiv.style.display = this.checked ? 'block' : 'none';
+            });
+        });
+        
+        // Risk level descriptions
+        const riskLevelRadios = document.querySelectorAll('input[name="riskLevel"]');
+        riskLevelRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.risk-description').forEach(desc => {
+                    desc.style.display = 'none';
+                });
+                document.getElementById(`desc${this.id.charAt(0).toUpperCase() + this.id.slice(1)}`).style.display = 'block';
+            });
+        });
+    
+        hasGps.addEventListener('change', function() {
+            if (this.checked) {
+                noGps.checked = false;
+                riskLevelGroup.classList.remove('hidden');
+                noGpsFields.classList.add('hidden');
+            } else if (!noGps.checked) {
+                riskLevelGroup.classList.add('hidden');
+            }
+        });
+    
+        noGps.addEventListener('change', function() {
+            if (this.checked) {
+                hasGps.checked = false;
+                noGpsFields.classList.remove('hidden');
+                riskLevelGroup.classList.remove('hidden');
+            } else if (!hasGps.checked) {
+                noGpsFields.classList.add('hidden');
+                riskLevelGroup.classList.add('hidden');
+            }
+        });
+    
         async function populateBuildingData() {
             const buildingId = localStorage.getItem('currentBuildingId');
             if (buildingId) {
@@ -114,379 +435,98 @@
                     const data = buildingSnap.data();
                     const buildingSelect = document.getElementById('buildingName');
                     const floorSelect = document.getElementById('floorNumber');
+                    
                     buildingSelect.innerHTML = `<option value="${data.buildingName}">${data.buildingName}</option>`;
-                    floorSelect.innerHTML = '<option value="">Select Floor</option>';
+                    
+                    floorSelect.innerHTML = '';
                     for (let i = 1; i <= parseInt(data.floors); i++) {
                         floorSelect.innerHTML += `<option value="${i}">Floor ${i}</option>`;
                     }
                 }
             }
         }
-
-        window.addSensor = async function() {
+    
+        window.addSensor = function() {
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
-                    alert("You must be logged in to add sensors!");
-                    window.location.href = 'login.htm';
+                    alert("You must be logged in to add a sensor!");
                     return;
                 }
-
+    
                 const buildingId = localStorage.getItem('currentBuildingId');
                 if (!buildingId) {
                     alert("No building selected. Please add a building first.");
                     window.location.href = 'add_building.htm';
                     return;
                 }
-
-                const sensorRows = document.querySelectorAll('.sensor-row');
-                const sensors = [];
-                for (const row of sensorRows) {
-                    const sensorType = row.querySelector('.sensor-type').value;
-                    const connectionType = row.querySelector('.connection-type').value;
-                    const connectionValue = row.querySelector('.connection-value').value.trim();
-                    const riskLevel = parseInt(row.querySelector('.risk-level').value);
-                    const uniqueId = row.querySelector('.unique-id').value.trim();
-                    const isPrimary = row.querySelector('.primary-sensor').checked;
-
-                    // Validation
-                    if (!connectionValue || !uniqueId || isNaN(riskLevel) || riskLevel < 1 || riskLevel > 3) {
-                        alert("Please fill all fields correctly for each sensor!");
-                        return;
+    
+                const sensorType = document.getElementById("sensorType").value;
+                const riskLevel = document.querySelector('input[name="riskLevel"]:checked').value;
+                const isPrimary = document.getElementById("primarySensor").checked;
+                const sensorCount = parseInt(document.getElementById("sensorCount").value) || 1;
+                
+                // Get connection details
+                const connections = {};
+                connectionCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        const detailsDiv = document.getElementById(`${checkbox.value}Connection`);
+                        const inputs = detailsDiv.querySelectorAll('input');
+                        connections[checkbox.value] = Array.from(inputs).map(input => input.value);
                     }
-                    if (connectionType === 'URL' && !/^https?:\/\//i.test(connectionValue)) {
-                        alert("For URL connection, please enter a valid URL starting with http:// or https://");
-                        return;
-                    }
+                });
 
-                    sensors.push({
-                        type: sensorType,
-                        connectionType,
-                        connectionValue,
-                        riskLevel,
-                        uniqueId,
-                        isPrimary,
-                        hasGps: document.getElementById('hasGps').checked,
-                        location: document.getElementById('sensorLocation').value.trim(),
-                        buildingName: document.getElementById('buildingName').value,
-                        floor: document.getElementById('floorNumber').value,
-                        zone: document.getElementById('zoneNumber').value.trim(),
-                        status: 'inactive',
-                        activated: false,
-                        addedBy: user.email,
-                        timestamp: new Date().toISOString()
-                    });
-                }
-
-                if (sensors.length === 0) {
-                    alert("Please add at least one sensor!");
+                if ((hasGps.checked || noGps.checked) && !riskLevel) {
+                    alert("Please select a risk level (1-3)!");
                     return;
                 }
-
+                
+                if (noGps.checked && !document.getElementById("sensorLocation").value.trim()) {
+                    alert("Please enter a sensor location!");
+                    return;
+                }
+                
                 try {
                     const buildingRef = doc(db, "buildings", buildingId);
-                    for (const sensor of sensors) {
-                        await updateDoc(buildingRef, { sensors: arrayUnion(sensor) });
+                    const sensorsToAdd = [];
+                    
+                    for (let i = 0; i < sensorCount; i++) {
+                        const sensorData = {
+                            type: sensorType,
+                            riskLevel: parseInt(riskLevel),
+                            isPrimary,
+                            connections,
+                            status: "inactive",
+                            uniqueId: `${buildingId}-${sensorType}-${Date.now()}-${i}`,
+                            addedBy: user.email,
+                            timestamp: new Date().toISOString()
+                        };
+    
+                        if (hasGps.checked) {
+                            sensorData.hasGps = true;
+                        } else if (noGps.checked) {
+                            sensorData.hasGps = false;
+                            sensorData.location = document.getElementById("sensorLocation").value.trim();
+                            sensorData.buildingName = document.getElementById("buildingName").value;
+                            sensorData.floor = document.getElementById("floorNumber").value;
+                        }
+                        
+                        sensorsToAdd.push(sensorData);
                     }
-                    alert("Sensors added successfully!");
+                    
+                    await updateDoc(buildingRef, {
+                        sensors: arrayUnion(...sensorsToAdd)
+                    });
+                    
+                    alert(`${sensorCount} ${sensorType} sensor(s) added successfully!`);
                     window.location.href = 'add_camera.html';
                 } catch (error) {
-                    console.error("Error adding sensors:", error);
-                    alert("Failed to add sensors. Please try again.");
+                    console.error("Error adding sensor:", error);
+                    alert("Failed to add sensor. Please try again.");
                 }
             });
-        };
-
-        document.getElementById('addSensorRow').addEventListener('click', addSensorRow);
-        window.onload = populateBuildingData;
+        }
+    
+        populateBuildingData();
     </script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-
-        :root {
-            --primary-red: #ff0000;
-            --dark-bg: #1a1a1a;
-            --black: #000;
-            --white-alpha: rgba(255, 255, 255, 0.1);
-            --shadow-red: rgba(255, 0, 0, 0.7);
-            --transition: all 0.3s ease;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background: radial-gradient(circle, var(--dark-bg) 10%, var(--black) 80%);
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            display: flex;
-            min-height: 100vh;
-            perspective: 1000px;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(180deg, #2a2a2a, var(--black));
-            padding: 20px;
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            box-shadow: 5px 0 20px var(--shadow-red);
-            border-right: 2px solid var(--primary-red);
-            transform: translateZ(20px);
-            transition: var(--transition);
-            z-index: 1000;
-        }
-
-        .sidebar:hover {
-            transform: translateZ(30px);
-        }
-
-        .sidebar nav ul {
-            list-style: none;
-        }
-
-        .sidebar nav ul li {
-            margin: 10px 0;
-        }
-
-        .sidebar nav ul li a {
-            color: var(--primary-red);
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: 700;
-            display: block;
-            padding: 12px;
-            border-radius: 8px;
-            transition: var(--transition);
-        }
-
-        .sidebar nav ul li a:hover,
-        .sidebar nav ul li a:focus {
-            background: rgba(255, 0, 0, 0.3);
-            transform: translateZ(10px);
-            outline: none;
-        }
-
-        .content {
-            margin-left: 250px;
-            padding: 30px;
-            width: calc(100% - 250px);
-            overflow-y: auto;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        .form-container {
-            background: var(--white-alpha);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 0 25px var(--shadow-red);
-            max-width: 800px;
-            width: 100%;
-            transform: translateZ(20px);
-            transition: var(--transition);
-        }
-
-        .form-container:hover {
-            transform: translateZ(30px);
-        }
-
-        .form-container h2 {
-            text-align: center;
-            font-size: 26px;
-            font-weight: 700;
-            text-shadow: 0 0 8px var(--primary-red);
-            margin-bottom: 20px;
-        }
-
-        .sensor-rows {
-            margin-bottom: 20px;
-        }
-
-        .sensor-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-        }
-
-        .input-group {
-            flex: 1;
-            min-width: 150px;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 6px;
-            border: none;
-            background: var(--white-alpha);
-            color: #fff;
-            font-size: 14px;
-            font-family: 'Orbitron', sans-serif;
-            transition: var(--transition);
-        }
-
-        .input-group input:hover,
-        .input-group select:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .input-group input:focus,
-        .input-group select:focus {
-            background: rgba(255, 255, 255, 0.2);
-            outline: 2px solid var(--primary-red);
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            min-width: 100px;
-            padding: 10px;
-        }
-
-        .checkbox-group input {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .remove-row {
-            padding: 8px 12px;
-            background: #cc0000;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: var(--transition);
-        }
-
-        .remove-row:hover,
-        .remove-row:focus {
-            background: #990000;
-            outline: none;
-        }
-
-        .form-container button:not(.remove-row) {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary-red);
-            color: #fff;
-            font-size: 16px;
-            font-weight: 700;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            transform: translateZ(0);
-            margin-top: 10px;
-        }
-
-        .form-container button:not(.remove-row):hover,
-        .form-container button:not(.remove-row):focus {
-            background: #cc0000;
-            transform: translateZ(10px);
-            outline: none;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: static;
-                border-right: none;
-                border-bottom: 2px solid var(--primary-red);
-                box-shadow: none;
-            }
-
-            .content {
-                margin-left: 0;
-                width: 100%;
-                padding: 20px;
-            }
-
-            .form-container {
-                padding: 15px;
-            }
-
-            .sensor-row {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <aside class="sidebar" role="navigation" aria-label="Main Navigation">
-        <nav>
-            <ul>
-                <li><a href="dashboard.htm" aria-label="Go to Dashboard">Dashboard</a></li>
-                <li><a href="add_building.htm" aria-label="Add New Buildings">Add Buildings</a></li>
-                <li><a href="monitoring.html" aria-label="View Monitoring Dashboard">Monitoring</a></li>
-                <li><a href="reports.html" aria-label="View Reports">Reports</a></li>
-                <li><a href="payment.htm" aria-label="Manage Payments">Payment</a></li>
-                <li><a href="about.htm" aria-label="About Us">About Us</a></li>
-                <li><a href="logout.htm" aria-label="Log Out">Logout</a></li>
-            </ul>
-        </nav>
-    </aside>
-
-    <main class="content" role="main">
-        <section class="form-container" aria-label="Add New Sensors">
-            <h2>Add New Sensors</h2>
-            <form>
-                <button type="button" id="addSensorRow" aria-label="Add New Sensor Row">Add Sensor</button>
-                <div class="sensor-rows" id="sensorRows"></div>
-                <div class="input-group">
-                    <label for="sensorLocation">Sensor Location</label>
-                    <input type="text" id="sensorLocation" placeholder="Enter sensor location" aria-required="true">
-                </div>
-                <div class="input-group">
-                    <label for="buildingName">Building Name</label>
-                    <select id="buildingName" aria-label="Select Building" disabled></select>
-                </div>
-                <div class="input-group">
-                    <label for="floorNumber">Floor Number</label>
-                    <select id="floorNumber" aria-label="Select Floor" aria-required="true"></select>
-                </div>
-                <div class="input-group">
-                    <label for="zoneNumber">Zone Number</label>
-                    <input type="text" id="zoneNumber" placeholder="Enter zone number" aria-required="true">
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="hasGps" aria-label="Sensor has Built-in GPS">
-                    <label for="hasGps">Built-in GPS</label>
-                </div>
-                <button type="button" onclick="addSensor()" aria-label="Proceed to Add Cameras">Next: Add Cameras</button>
-            </form>
-        </section>
-    </main>
 </body>
 </html>
