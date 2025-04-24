@@ -5,143 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Camera | RERS System</title>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        body {
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            display: flex;
-            height: 100vh;
-        }
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(180deg, #2a2a2a, #000);
-            padding: 20px;
-            position: fixed;
-            height: 100vh;
-            box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
-            border-right: 2px solid #ff0000;
-        }
-        .sidebar nav ul {
-            list-style: none;
-            padding: 0;
-        }
-        .sidebar nav ul li {
-            padding: 15px 0;
-            text-align: center;
-        }
-        .sidebar nav ul li a {
-            color: #ff0000;
-            text-decoration: none;
-            font-size: 18px;
-            font-weight: bold;
-            display: block;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .content {
-            margin-left: 270px;
-            padding: 40px;
-            width: calc(100% - 270px);
-            text-align: center;
-            overflow-y: auto;
-        }
-        .form-container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
-            text-align: center;
-            width: 90%;
-            max-width: 800px;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .input-group {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .input-group input, .input-group select {
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            outline: none;
-        }
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            margin-top: 15px;
-        }
-        .primary-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-        .form-container button {
-            width: 100%;
-            padding: 15px;
-            background: red;
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: 0.3s;
-            margin-top: 20px;
-        }
-        .form-container button:hover {
-            background: darkred;
-        }
-    </style>
-</head>
-<body>
-    <aside class="sidebar">
-        <nav>
-            <ul>
-                <li><a href="../web/dashboard.htm">dashboard</a></li>
-                <li><a href="../web/add_building.html">Add Buildings</a></li>
-                <li><a href="../web/monitoring.html">Monitoring</a></li>
-                <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment .htm">Payment</a></li>
-                <li><a href="../web/US.htm">About Us</a></li>
-                <li><a href="../web/logout.htm">Logout</a></li>
-            </ul>
-        </nav>
-    </aside>
-
-    <div class="content">
-        <div class="form-container">
-            <h2>Add Cameras</h2>
-            <div class="input-group"><input type="text" id="cameraLocation" placeholder="Camera Location"></div>
-            <div class="input-group"><input type="text" id="cameraURL" placeholder="Camera Live URL"></div>
-            <div class="checkbox-wrapper">
-                <input type="checkbox" id="primaryCamera" class="primary-checkbox">
-                <label for="primaryCamera">Mark as Primary Camera</label>
-            </div>
-            <button onclick="addCamera()">Finish</button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, updateDoc, arrayUnion, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    
+
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -150,54 +18,71 @@
             messagingSenderId: "432558250053",
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
-    
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-    
+
+        async function validateUniqueId(uniqueId) {
+            const querySnapshot = await getDocs(collection(db, "buildings"));
+            for (const doc of querySnapshot.docs) {
+                const building = doc.data();
+                if (building.cameras?.some(cam => cam.uniqueId === uniqueId)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         window.addCamera = function() {
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
                     alert("You must be logged in to add a camera!");
                     return;
                 }
-    
+
                 const buildingId = localStorage.getItem('currentBuildingId');
                 if (!buildingId) {
                     alert("No building selected. Please add a building first.");
                     window.location.href = 'add_building.htm';
                     return;
                 }
-    
+
                 const cameraLocation = document.getElementById("cameraLocation").value.trim();
                 const cameraURL = document.getElementById("cameraURL").value.trim();
+                const uniqueId = document.getElementById("uniqueId").value.trim();
                 const isPrimary = document.getElementById("primaryCamera").checked;
-    
-                // Input validation
-                if (!cameraLocation || !cameraURL) {
+                const connectionType = document.getElementById("connectionType").value;
+
+                if (!cameraLocation || !cameraURL || !uniqueId) {
                     alert("Please fill in all camera fields!");
                     return;
                 }
-                // Basic URL validation (ensure it starts with http:// or https://)
                 if (!/^https?:\/\//i.test(cameraURL)) {
                     alert("Please enter a valid URL starting with http:// or https://");
                     return;
                 }
-    
+                if (!(await validateUniqueId(uniqueId))) {
+                    alert("Unique ID already exists. Please choose another.");
+                    return;
+                }
+
                 const cameraData = {
                     location: cameraLocation,
                     url: cameraURL,
-                    isPrimary: isPrimary,
+                    uniqueId,
+                    isPrimary,
+                    connectionType,
                     addedBy: user.email,
-                    timestamp: new Date().toISOString() // For sorting or auditing
+                    timestamp: new Date().toISOString()
                 };
-    
+
                 try {
                     const buildingRef = doc(db, "buildings", buildingId);
                     await updateDoc(buildingRef, {
                         cameras: arrayUnion(cameraData)
                     });
-                    alert("✅ Camera added successfully!");
+                    alert("Camera added successfully!");
                     localStorage.removeItem('currentBuildingId');
                     window.location.href = 'dashboard.htm';
                 } catch (error) {
@@ -205,7 +90,194 @@
                     alert("Failed to add camera. Please try again.");
                 }
             });
-        }
+        };
     </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, #1a1a1a 10%, #000 80%);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            height: 100vh;
+            perspective: 1000px;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #2a2a2a, #000);
+            padding: 20px;
+            position: fixed;
+            height: 100%;
+            box-shadow: 5px 0 20px rgba(255, 0, 0, 0.6);
+            border-right: 2px solid #ff0000;
+            transform: translateZ(20px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .sidebar:hover {
+            transform: translateZ(30px);
+        }
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar nav ul li {
+            margin: 10px 0;
+        }
+        .sidebar nav ul li a {
+            color: #ff0000;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 700;
+            display: block;
+            padding: 12px;
+            border-radius: 8px;
+            transition: background 0.3s, transform 0.3s;
+        }
+        .sidebar nav ul li a:hover {
+            background: rgba(255, 0, 0, 0.3);
+            transform: translateZ(10px);
+        }
+        .content {
+            margin-left: 270px;
+            padding: 30px;
+            width: calc(100% - 270px);
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .form-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.7);
+            max-width: 600px;
+            width: 100%;
+            transform: translateZ(20px);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .form-container:hover {
+            transform: translateZ(30px);
+        }
+        .form-container h2 {
+            font-size: 24px;
+            text-shadow: 0 0 10px #ff0000;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .input-group input:hover, .input-group input:focus, .input-group select:hover, .input-group select:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+        .checkbox-wrapper label {
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .form-container button {
+            width: 100%;
+            padding: 12px;
+            background: #ff0000;
+            color: #fff;
+            font-weight: 700;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s, transform 0.3s;
+        }
+        .form-container button:hover {
+            background: #cc0000;
+            transform: translateZ(10px);
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                border-right: none;
+                border-bottom: 2px solid #ff0000;
+                box-shadow: none;
+            }
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+            .form-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="dashboard.htm">Dashboard</a></li>
+                <li><a href="add_building.htm">Add Buildings</a></li>
+                <li><a href="monitoring.html">Monitoring</a></li>
+                <li><a href="reports.html">Reports</a></li>
+                <li><a href="payment.htm">Payment</a></li>
+                <li><a href="about.htm">About Us</a></li>
+                <li><a href="logout.htm">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="content">
+        <div class="form-container">
+            <h2>Add Camera</h2>
+            <div class="input-group">
+                <input type="text" id="cameraLocation" placeholder="Camera Location">
+            </div>
+            <div class="input-group">
+                <input type="text" id="cameraURL" placeholder="Camera Live URL">
+            </div>
+            <div class="input-group">
+                <input type="text" id="uniqueId" placeholder="Unique Camera ID">
+            </div>
+            <div class="input-group">
+                <select id="connectionType">
+                    <option value="URL">URL</option>
+                    <option value="RTSP">RTSP</option>
+                    <option value="IP">IP Camera</option>
+                    <option value="WiFi">Wi-Fi</option>
+                    <option value="Ethernet">Ethernet</option>
+                </select>
+            </div>
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="primaryCamera">
+                <label for="primaryCamera">Mark as Primary Camera</label>
+            </div>
+            <button onclick="addCamera()">Finish</button>
+        </div>
+    </div>
 </body>
 </html>
