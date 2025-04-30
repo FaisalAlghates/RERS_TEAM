@@ -247,7 +247,7 @@
             <ul>
                 <li><a href="../web/dashboard.htm">dashboard</a></li>
                 <li><a href="../web/add_building.htm">Add Buildings</a></li>
-                <li><a href="../web/monitoring_primary.html">Monitoring</a></li>
+                <li><a href="../web/monitoring.html">Monitoring</a></li>
                 <li><a href="../web/reports.html">Reports</a></li>
                 <li><a href="../web/payment .htm">Payment</a></li>
                 <li><a href="../web/US.htm">About Us</a></li>
@@ -398,7 +398,7 @@
                     details.style.display = 'none';
                 });
                 // Show the selected connection's details
-                const detailsDiv = document.getElementById(`${this.value}Connection`);
+                const detailsDiv = document.getElementById(this.value + "Connection");
                 if (this.checked) {
                     detailsDiv.style.display = 'block';
                 }
@@ -474,7 +474,7 @@
                 const connections = {};
                 connectionRadios.forEach(radio => {
                     if (radio.checked) {
-                        const detailsDiv = document.getElementById(`${radio.value}Connection`);
+                        const detailsDiv = document.getElementById(radio.value + "Connection");
                         const inputs = detailsDiv.querySelectorAll('input');
                         connections[radio.value] = Array.from(inputs).map(input => input.value);
                     }
@@ -529,7 +529,7 @@
                     alert("Failed to add sensor. Please try again.");
                 }
             });
-        }
+        };
 
         populateBuildingData();
     </script>
