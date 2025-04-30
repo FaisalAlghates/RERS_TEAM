@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,7 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        
+
         :root {
             --primary-color: #ff0000;
             --secondary-color: #00ff00;
@@ -87,7 +88,8 @@
             margin-bottom: 10px;
         }
 
-        .input-group input, .input-group select {
+        .input-group input,
+        .input-group select {
             flex: 1;
             padding: 12px;
             border-radius: 8px;
@@ -238,6 +240,7 @@
         }
     </style>
 </head>
+
 <body>
     <aside class="sidebar">
         <nav>
@@ -256,12 +259,12 @@
     <div class="content">
         <div class="form-container">
             <h2>Add New Sensors</h2>
-            
+
             <div class="sensor-quantity">
                 <label for="sensorCount">Number of Sensors to Add:</label>
                 <input type="number" id="sensorCount" min="1" max="10" value="1">
             </div>
-            
+
             <div class="input-group">
                 <select id="sensorType">
                     <option value="Temperature">Temperature Sensor</option>
@@ -276,7 +279,7 @@
                     <option value="Light">Light Sensor</option>
                 </select>
             </div>
-            
+
             <div class="checkbox-wrapper">
                 <input type="checkbox" id="hasGps" class="primary-checkbox">
                 <label for="hasGps">Built-in GPS in Sensor</label>
@@ -285,47 +288,47 @@
                 <input type="checkbox" id="noGps" class="primary-checkbox">
                 <label for="noGps">Does not have built-in GPS</label>
             </div>
-            
+
             <div class="input-group hidden" id="riskLevelGroup">
                 <input type="number" id="riskLevel" placeholder="Risk Level (1-3)" min="1" max="3">
             </div>
-            
+
             <div class="input-group hidden" id="noGpsFields">
                 <input type="text" id="sensorLocation" placeholder="Sensor Location">
                 <select id="buildingName"></select>
                 <select id="floorNumber"></select>
             </div>
-            
+
             <div class="connection-types">
                 <h3>Connection Types</h3>
                 <div class="connection-type">
-                    <label><input type="checkbox" name="connection" value="url"> URL Connection</label>
+                    <label><input type="radio" name="connection" value="url"> URL Connection</label>
                     <div class="connection-details" id="urlConnection">
                         <input type="text" placeholder="Enter URL">
                     </div>
                 </div>
                 <div class="connection-type">
-                    <label><input type="checkbox" name="connection" value="api"> API Connection</label>
+                    <label><input type="radio" name="connection" value="api"> API Connection</label>
                     <div class="connection-details" id="apiConnection">
                         <input type="text" placeholder="API Endpoint">
                         <input type="text" placeholder="API Key">
                     </div>
                 </div>
                 <div class="connection-type">
-                    <label><input type="checkbox" name="connection" value="mqtt"> MQTT Connection</label>
+                    <label><input type="radio" name="connection" value="mqtt"> MQTT Connection</label>
                     <div class="connection-details" id="mqttConnection">
                         <input type="text" placeholder="MQTT Broker">
                         <input type="text" placeholder="Topic">
                     </div>
                 </div>
                 <div class="connection-type">
-                    <label><input type="checkbox" name="connection" value="websocket"> WebSocket Connection</label>
+                    <label><input type="radio" name="connection" value="websocket"> WebSocket Connection</label>
                     <div class="connection-details" id="websocketConnection">
                         <input type="text" placeholder="WebSocket URL">
                     </div>
                 </div>
             </div>
-            
+
             <div class="risk-levels">
                 <h3>Risk Level Configuration</h3>
                 <div class="risk-level low">
@@ -335,15 +338,16 @@
                 <div class="risk-description" id="descLow">
                     Initial danger level - Contacts technicians and maintenance workers via email when activated.
                 </div>
-                
+
                 <div class="risk-level medium">
                     <input type="radio" name="riskLevel" id="riskMedium" value="2">
                     <label for="riskMedium">Level 2 (Medium Risk)</label>
                 </div>
                 <div class="risk-description" id="descMedium">
-                    Must be addressed immediately - Contacts civil defense, ambulance, special forces, project manager, and workers via email.
+                    Must be addressed immediately - Contacts civil defense, ambulance, special forces, project manager,
+                    and workers via email.
                 </div>
-                
+
                 <div class="risk-level high">
                     <input type="radio" name="riskLevel" id="riskHigh" value="3">
                     <label for="riskHigh">Level 3 (High Risk)</label>
@@ -352,12 +356,12 @@
                     Critical danger - Contacts all relevant authorities completely via email with all site information.
                 </div>
             </div>
-            
+
             <div class="checkbox-wrapper">
                 <input type="checkbox" id="primarySensor" class="primary-checkbox">
                 <label for="primarySensor">Mark as Primary Sensor</label>
             </div>
-            
+
             <button onclick="addSensor()">Next: Add Cameras</button>
         </div>
     </div>
@@ -366,7 +370,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, collection, doc, updateDoc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-    
+
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -375,37 +379,38 @@
             messagingSenderId: "432558250053",
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
-    
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-    
+
         const hasGps = document.getElementById('hasGps');
         const noGps = document.getElementById('noGps');
         const riskLevelGroup = document.getElementById('riskLevelGroup');
         const noGpsFields = document.getElementById('noGpsFields');
-        
+
         // Connection type toggles
-        const connectionCheckboxes = document.querySelectorAll('input[name="connection"]');
-        connectionCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const detailsDiv = document.getElementById(`${this.value}Connection`);
-                detailsDiv.style.display = this.checked ? 'block' : 'none';
-            });
-        });
-        
-        // Risk level descriptions
-        const riskLevelRadios = document.querySelectorAll('input[name="riskLevel"]');
-        riskLevelRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                document.querySelectorAll('.risk-description').forEach(desc => {
-                    desc.style.display = 'none';
+        const connectionRadios = document.querySelectorAll('input[name="connection"]');
+        connectionRadios.forEach(radio => {
+            radio.addEventListener('change', function () {
+                // Hide all connection details
+                document.querySelectorAll('.connection-details').forEach(details => {
+                    details.style.display = 'none';
                 });
-                document.getElementById(`desc${this.id.charAt(0).toUpperCase() + this.id.slice(1)}`).style.display = 'block';
+                // Show the selected connection's details
+                const detailsDiv = document.getElementById(`${this.value}Connection`);
+                if (this.checked) {
+                    detailsDiv.style.display = 'block';
+                }
             });
         });
-    
-        hasGps.addEventListener('change', function() {
+
+        // Ensure all risk level descriptions are visible
+        document.querySelectorAll('.risk-description').forEach(desc => {
+            desc.style.display = 'block';
+        });
+
+        hasGps.addEventListener('change', function () {
             if (this.checked) {
                 noGps.checked = false;
                 riskLevelGroup.classList.remove('hidden');
@@ -414,8 +419,8 @@
                 riskLevelGroup.classList.add('hidden');
             }
         });
-    
-        noGps.addEventListener('change', function() {
+
+        noGps.addEventListener('change', function () {
             if (this.checked) {
                 hasGps.checked = false;
                 noGpsFields.classList.remove('hidden');
@@ -425,7 +430,7 @@
                 riskLevelGroup.classList.add('hidden');
             }
         });
-    
+
         async function populateBuildingData() {
             const buildingId = localStorage.getItem('currentBuildingId');
             if (buildingId) {
@@ -435,9 +440,9 @@
                     const data = buildingSnap.data();
                     const buildingSelect = document.getElementById('buildingName');
                     const floorSelect = document.getElementById('floorNumber');
-                    
+
                     buildingSelect.innerHTML = `<option value="${data.buildingName}">${data.buildingName}</option>`;
-                    
+
                     floorSelect.innerHTML = '';
                     for (let i = 1; i <= parseInt(data.floors); i++) {
                         floorSelect.innerHTML += `<option value="${i}">Floor ${i}</option>`;
@@ -445,33 +450,33 @@
                 }
             }
         }
-    
-        window.addSensor = function() {
+
+        window.addSensor = function () {
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
                     alert("You must be logged in to add a sensor!");
                     return;
                 }
-    
+
                 const buildingId = localStorage.getItem('currentBuildingId');
                 if (!buildingId) {
                     alert("No building selected. Please add a building first.");
                     window.location.href = 'add_building.htm';
                     return;
                 }
-    
+
                 const sensorType = document.getElementById("sensorType").value;
                 const riskLevel = document.querySelector('input[name="riskLevel"]:checked').value;
                 const isPrimary = document.getElementById("primarySensor").checked;
                 const sensorCount = parseInt(document.getElementById("sensorCount").value) || 1;
-                
+
                 // Get connection details
                 const connections = {};
-                connectionCheckboxes.forEach(checkbox => {
-                    if (checkbox.checked) {
-                        const detailsDiv = document.getElementById(`${checkbox.value}Connection`);
+                connectionRadios.forEach(radio => {
+                    if (radio.checked) {
+                        const detailsDiv = document.getElementById(`${radio.value}Connection`);
                         const inputs = detailsDiv.querySelectorAll('input');
-                        connections[checkbox.value] = Array.from(inputs).map(input => input.value);
+                        connections[radio.value] = Array.from(inputs).map(input => input.value);
                     }
                 });
 
@@ -479,16 +484,16 @@
                     alert("Please select a risk level (1-3)!");
                     return;
                 }
-                
+
                 if (noGps.checked && !document.getElementById("sensorLocation").value.trim()) {
                     alert("Please enter a sensor location!");
                     return;
                 }
-                
+
                 try {
                     const buildingRef = doc(db, "buildings", buildingId);
                     const sensorsToAdd = [];
-                    
+
                     for (let i = 0; i < sensorCount; i++) {
                         const sensorData = {
                             type: sensorType,
@@ -500,7 +505,7 @@
                             addedBy: user.email,
                             timestamp: new Date().toISOString()
                         };
-    
+
                         if (hasGps.checked) {
                             sensorData.hasGps = true;
                         } else if (noGps.checked) {
@@ -509,14 +514,14 @@
                             sensorData.buildingName = document.getElementById("buildingName").value;
                             sensorData.floor = document.getElementById("floorNumber").value;
                         }
-                        
+
                         sensorsToAdd.push(sensorData);
                     }
-                    
+
                     await updateDoc(buildingRef, {
                         sensors: arrayUnion(...sensorsToAdd)
                     });
-                    
+
                     alert(`${sensorCount} ${sensorType} sensor(s) added successfully!`);
                     window.location.href = 'add_camera.html';
                 } catch (error) {
@@ -525,8 +530,10 @@
                 }
             });
         }
-    
+
         populateBuildingData();
     </script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'938927fb7ab2b0b1',t:'MTc0NjAzODMwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
 </body>
+
 </html>
