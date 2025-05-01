@@ -8,7 +8,7 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -24,10 +24,8 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        let cachedPrimaryCameras = null;
-        let cachedSecondaryCameras = null;
-        let cachedPrimarySensors = null;
-        let cachedSecondarySensors = null;
+        // Track notified sensors to avoid duplicate notifications
+        const notifiedSensors = new Set();
 
         function convertToEmbedUrl(url) {
             if (!url) return null;
@@ -47,21 +45,44 @@
             }
         };
 
-        async function loadCameras(isPrimary = true) {
+        function notifyParty(sensor, building) {
+            const sensorId = sensor.uniqueId || `${sensor.type}-${sensor.location}`;
+            if (notifiedSensors.has(sensorId)) return; // Prevent duplicate notifications
+
+            const contacts = building.contacts || {};
+            const contactEmail = contacts.email || "admin@example.com";
+            const contactPhone = contacts.phone || "+1234567890";
+            const riskLevel = sensor.riskLevel || 1;
+
+            let notificationMethod = "Email";
+            let notificationMessage = `Sensor Alert: ${sensor.type} at ${sensor.location || building.location || "Unknown"} (Building: ${building.name || "N/A"}) - Risk Level: ${riskLevel}`;
+            
+            if (riskLevel >= 3) {
+                notificationMethod = "Email and SMS (High Priority)";
+                notificationMessage += " - Immediate action required!";
+            } else if (riskLevel === 2) {
+                notificationMethod = "Email (Medium Priority)";
+                notificationMessage += " - Please review.";
+            } else {
+                notificationMethod = "Email (Low Priority)";
+                notificationMessage += " - For your information.";
+            }
+
+            console.log(`Notifying party via ${notificationMethod} to ${contactEmail}${contactPhone ? ` and ${contactPhone}` : ''}: ${notificationMessage}`);
+            // In a real application, integrate an email/SMS service here (e.g., SendGrid, Twilio)
+
+            notifiedSensors.add(sensorId);
+        }
+
+        function loadCameras(isPrimary = true) {
             const container = isPrimary ? document.getElementById("primaryCameraGrid") : document.getElementById("secondaryCameraGrid");
             container.innerHTML = '<p class="loading">Loading Cameras...</p>';
 
-            const cache = isPrimary ? cachedPrimaryCameras : cachedSecondaryCameras;
-            if (cache) {
-                container.innerHTML = cache;
-                return;
-            }
-
-            try {
-                const querySnapshot = await getDocs(collection(db, "buildings"));
+            onSnapshot(collection(db, "buildings"), (snapshot) => {
                 let camerasHTML = "";
                 let cameraCount = 0;
-                querySnapshot.forEach((doc) => {
+
+                snapshot.forEach((doc) => {
                     const building = doc.data();
                     if (building.cameras && Array.isArray(building.cameras)) {
                         building.cameras.forEach((camera) => {
@@ -79,30 +100,23 @@
                         });
                     }
                 });
-                if (isPrimary) cachedPrimaryCameras = camerasHTML || "<p>No primary cameras available</p>";
-                else cachedSecondaryCameras = camerasHTML || "<p>No secondary cameras available</p>";
+
                 container.innerHTML = camerasHTML || "<p>No cameras available</p>";
-            } catch (error) {
+            }, (error) => {
                 console.error("Error loading cameras:", error);
                 container.innerHTML = `<p>Error loading cameras: ${error.message}</p>`;
-            }
+            });
         }
 
-        async function loadSensors(isPrimary = true, filter = "all", searchQuery = "") {
+        function loadSensors(isPrimary = true, filter = "all", searchQuery = "") {
             const container = isPrimary ? document.getElementById("primarySensorList") : document.getElementById("secondarySensorList");
             container.innerHTML = '<p class="loading">Loading Sensors...</p>';
 
-            const cache = isPrimary ? cachedPrimarySensors : cachedSecondarySensors;
-            if (cache && filter === "all" && !searchQuery) {
-                container.innerHTML = cache;
-                return;
-            }
-
-            try {
-                const querySnapshot = await getDocs(collection(db, "buildings"));
+            onSnapshot(collection(db, "buildings"), (snapshot) => {
                 let sensorsHTML = "";
                 let sensorCount = 0;
-                querySnapshot.forEach((doc) => {
+
+                snapshot.forEach((doc) => {
                     const building = doc.data();
                     let sensorsArray = Array.isArray(building.sensors) ? building.sensors : Object.values(building.sensors || {});
                     sensorsArray.forEach((sensor) => {
@@ -129,16 +143,20 @@
                                     </ul>
                                 </div>`;
                             sensorCount++;
+
+                            // Check if sensor is activated and notify the party
+                            if (sensor.activated === true) {
+                                notifyParty(sensor, building);
+                            }
                         }
                     });
                 });
-                if (isPrimary) cachedPrimarySensors = sensorsHTML || "<p>No primary sensors available</p>";
-                else cachedSecondarySensors = sensorsHTML || "<p>No secondary sensors available</p>";
+
                 container.innerHTML = sensorsHTML || "<p>No sensors available</p>";
-            } catch (error) {
+            }, (error) => {
                 console.error("Error loading sensors:", error);
                 container.innerHTML = `<p>Error loading sensors: ${error.message}</p>`;
-            }
+            });
         }
 
         function switchTab(tab) {
@@ -527,6 +545,6 @@
             </div>
         </div>
     </div>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93911a65bf092733',t:'MTc0NjEyMTYzNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
