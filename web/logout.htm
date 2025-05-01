@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +9,17 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+        :root {
+            --primary-color: #ff0000;
+            --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            background: var(--bg-gradient);
             color: #fff;
             font-family: 'Orbitron', sans-serif;
             display: flex;
@@ -22,22 +30,25 @@
         }
 
         .logout-container {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            box-shadow: var(--card-shadow);
             width: 90%;
             max-width: 400px;
             animation: fadeIn 1s ease-in-out;
         }
 
         .logout-container h2 {
+            font-size: 24px;
+            text-shadow: 0 0 10px var(--primary-color);
             margin-bottom: 20px;
         }
 
-        .logout-button {
+        .logout-container button {
+            width: 100%;
             padding: 15px;
-            background: red;
+            background: var(--primary-color);
             color: white;
             font-weight: bold;
             border: none;
@@ -45,11 +56,34 @@
             cursor: pointer;
             font-size: 18px;
             transition: 0.3s;
-            width: 100%;
         }
 
-        .logout-button:hover {
+        .logout-container button:hover {
             background: darkred;
+        }
+
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: var(--primary-color);
+        }
+
+        .loading::before {
+            content: "";
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--primary-color);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         @keyframes fadeIn {
@@ -58,43 +92,52 @@
         }
     </style>
 </head>
+
 <body>
     <div class="logout-container">
-        <h2>Are you sure you want to logout?</h2>
-        <button class="logout-button" id="logoutBtn">Logout</button>
+        <h2>Logout</h2>
+        <p>Are you sure you want to logout?</p>
+        <p class="loading" id="loading">Logging out...</p>
+        <button onclick="logout()">Logout</button>
     </div>
 
     <script type="module">
-        // 🔹 Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-        // 🔹 Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
-            databaseURL: "https://rersweb-default-rtdb.firebaseio.com",
             projectId: "rersweb",
             storageBucket: "rersweb.firebasestorage.app",
             messagingSenderId: "432558250053",
-            appId: "1:432558250053:web:07fc91665244a2d93feb2c",
-            measurementId: "G-WEK79FH0J6"
+            appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
 
-        // 🔹 Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // 🔹 Logout Function
-        document.getElementById("logoutBtn").addEventListener("click", async () => {
+        window.logout = async function () {
+            const logoutButton = document.querySelector('button[onclick="logout()"]');
+            const loading = document.getElementById("loading");
+
+            logoutButton.disabled = true;
+            loading.style.display = "block";
+
             try {
                 await signOut(auth);
-                alert("✅ Logged out successfully.");
-                window.location.href = "../web/login Page.html"; // Redirect to dashboard
+                alert("✅ Logged out successfully!");
+                history.pushState({}, '', '../web/login Page.html');
+                window.location.href = '../web/login Page.html';
             } catch (error) {
+                console.error("Error logging out:", error);
                 alert("❌ Logout failed: " + error.message);
+            } finally {
+                logoutButton.disabled = false;
+                loading.style.display = "none";
             }
-        });
+        };
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9390c0b5f6d6820f',t:'MTc0NjExNzk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
 </html>

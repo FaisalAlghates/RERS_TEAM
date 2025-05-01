@@ -56,7 +56,7 @@
             color: #fff;
         }
 
-        .register-button {
+        .signup-button {
             padding: 15px;
             background: red;
             color: white;
@@ -69,7 +69,7 @@
             width: 100%;
         }
 
-        .register-button:hover {
+        .signup-button:hover {
             background: darkred;
         }
 
@@ -92,26 +92,51 @@
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: red;
+        }
+
+        .loading::before {
+            content: "";
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid red;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
+
     <div class="clock" id="clock">00:00:00</div>
+    
     <div class="signup-container">
         <h2>Sign Up</h2>
-        <input type="text" id="fullName" placeholder="Full Name" required>
+        <input type="text" id="name" placeholder="Full Name" required>
         <input type="email" id="email" placeholder="Email" required>
         <input type="password" id="password" placeholder="Password" required>
-        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
-        <button class="register-button" id="registerButton">Register</button>
-        <div class="login-link">Already have an account? <a href="../web/login Page.html">Login</a></div>
+        <button class="signup-button" id="signupButton">Sign Up</button>
+        <p class="loading" id="loading">Signing up...</p>
+        <div class="login-link">Already have an account? <a href="login%20Page.html">Login</a></div>
     </div>
-
+    
     <script type="module">
-        // 🔹 Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-        // 🔹 Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -123,42 +148,72 @@
             measurementId: "G-WEK79FH0J6"
         };
 
-        // 🔹 Initialize Firebase & Authentication
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // 🔹 Register Function
-        document.getElementById("registerButton").addEventListener("click", async () => {
-            const fullName = document.getElementById("fullName").value;
-            const email = document.getElementById("email").value;
+        document.getElementById("signupButton").addEventListener("click", async () => {
+            const name = document.getElementById("name").value.trim();
+            const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
+            const signupButton = document.getElementById("signupButton");
+            const loading = document.getElementById("loading");
 
-            if (!fullName || !email || !password || !confirmPassword) {
-                alert("⚠️ All fields are required!");
+            // Enhanced input validation
+            if (!name || !email || !password) {
+                alert("Please fill in all fields.");
                 return;
             }
-
+            if (!/^[a-zA-Z\s]+$/.test(name)) {
+                alert("Name should only contain letters and spaces.");
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                alert("Please enter a valid email address.");
+                return;
+            }
             if (password.length < 6) {
-                alert("⚠️ Password must be at least 6 characters long!");
+                alert("Password must be at least 6 characters long.");
                 return;
             }
 
-            if (password !== confirmPassword) {
-                alert("⚠️ Passwords do not match!");
-                return;
-            }
+            signupButton.disabled = true;
+            loading.style.display = "block";
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                alert("✅ Registration successful! Redirecting to login page...");
-                window.location.href = "../web/login Page.html";
+                const user = userCredential.user;
+
+                // Create user profile in Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    name: name,
+                    email: email,
+                    trialStart: new Date(),
+                    subscribed: false,
+                    createdAt: new Date().toISOString()
+                });
+
+                alert("✅ Sign up successful! Your private account has been created.");
+                // Removed history.pushState to avoid errors in file:// protocol
+                window.location.href = "dashboard.htm";
             } catch (error) {
-                alert("❌ Error: " + error.message);
+                // User-friendly error messages
+                let errorMessage = "Sign up failed. Please try again.";
+                if (error.code === "auth/email-already-in-use") {
+                    errorMessage = "This email is already registered. Please use a different email or log in.";
+                } else if (error.code === "auth/invalid-email") {
+                    errorMessage = "Invalid email format. Please check your email.";
+                } else if (error.code === "auth/weak-password") {
+                    errorMessage = "Password is too weak. Please use a stronger password.";
+                }
+                alert(`❌ ${errorMessage}`);
+                console.error("Signup error:", error);
+            } finally {
+                signupButton.disabled = false;
+                loading.style.display = "none";
             }
         });
 
-        // 🔹 Update Clock Function
         function updateClock() {
             const clockElement = document.getElementById("clock");
             if (!clockElement) return;
@@ -174,6 +229,5 @@
         setInterval(updateClock, 1000);
         updateClock();
     </script>
-
 </body>
 </html>

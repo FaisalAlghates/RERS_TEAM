@@ -11,6 +11,7 @@
 
         :root {
             --primary-color: #ff0000;
+            --secondary-color: #00ff00;
             --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
             --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
             --card-bg: rgba(255, 255, 255, 0.1);
@@ -79,49 +80,66 @@
             width: 90%;
             max-width: 800px;
             margin: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
 
-        .contact-info {
-            margin-top: 20px;
-            font-size: 18px;
+        .about-container h2 {
+            font-size: 24px;
+            text-shadow: 0 0 10px var(--primary-color);
+            margin-bottom: 20px;
         }
 
-        .contact-form {
-            margin-top: 20px;
-            width: 100%;
-        }
-
-        .contact-form input,
-        .contact-form textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            border: none;
+        .about-container p {
             font-size: 16px;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
+            line-height: 1.6;
         }
 
-        .submit-button {
-            padding: 15px;
-            background: var(--primary-color);
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: 0.3s;
-            width: 100%;
-            margin-top: 10px;
+        .loading {
+            display: none;
+            font-size: 16px;
+            color: var(--primary-color);
         }
 
-        .submit-button:hover {
-            background: darkred;
+        .loading::before {
+            content: "";
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--primary-color);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                border-right: none;
+                border-bottom: 2px solid var(--primary-color);
+                box-shadow: none;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .about-container {
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -143,31 +161,19 @@
 
     <div class="content">
         <div class="about-container">
-            <h2>About Our Company</h2>
-            <p>We specialize in advanced security and monitoring systems, providing real-time insights and automated
-                reports for various industries.</p>
-
-            <div class="contact-info">
-                <h3>Contact Information</h3>
-                <p><strong>Email:</strong> alghatesfaisal@gmail.com</p>
-                <p><strong>Phone:</strong> 053 588 1035</p>
-                <p><strong>Address:</strong> Al Badr Tower, 4th floor, Office 88, Tahlia Street, Jeddah, Saudi Arabia
-                </p>
-            </div>
-
-            <div class="contact-form">
-                <h3>Send Us a Message</h3>
-                <input type="text" id="name" placeholder="Your Name" required>
-                <input type="email" id="email" placeholder="Your Email" required>
-                <textarea id="message" placeholder="Your Message" rows="4" required></textarea>
-                <button class="submit-button" onclick="sendMessage()">Send Message</button>
-            </div>
+            <h2>About Us</h2>
+            <p class="loading" id="loading">Loading...</p>
+            <p>
+                RERS System is a cutting-edge platform designed to enhance emergency response capabilities through real-time monitoring and management. Our mission is to provide secure, reliable, and user-friendly solutions for building safety and emergency preparedness.
+            </p>
+            <p>
+                Powered by advanced sensor technology and integrated with Firebase for secure data management, we ensure that your data remains private and accessible only to you. Contact us at <a href="mailto:support@rerssystem.com" style="color: var(--primary-color);">support@rerssystem.com</a> for more information.
+            </p>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -180,35 +186,58 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const auth = getAuth(app);
 
-        async function sendMessage() {
-            const name = document.getElementById("name").value;
-            const email = document.getElementById("email").value;
-            const message = document.getElementById("message").value;
+        onAuthStateChanged(auth, (user) => {
+            const loading = document.getElementById("loading");
 
-            if (!name || !email || !message) {
-                alert("Please fill in all fields.");
-                return;
+            loading.style.display = "block";
+
+            if (!user) {
+                window.location.href = '../web/login Page.html';
             }
 
-            try {
-                await addDoc(collection(db, "messages"), {
-                    name: name,
-                    email: email,
-                    message: message,
-                    timestamp: new Date()
-                });
-
-                alert("✅ Message sent successfully!");
-                document.getElementById("name").value = "";
-                document.getElementById("email").value = "";
-                document.getElementById("message").value = "";
-            } catch (error) {
-                alert("❌ Failed to send message. Try again.");
+            loading.style.display = "none";
+        });
+    </script>
+    <script>
+        (function () {
+            // Move 'a' declaration to the outer scope
+            let a;
+            function c() {
+                const b = a.contentDocument || a.contentWindow.document;
+                if (b) {
+                    const d = b.createElement('script');
+                    d.innerHTML = "window.__CF$cv$params={r:'9390c0b5f0d6820f',t:'MTc0NjExNzk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+                    b.getElementsByTagName('head')[0].appendChild(d);
+                }
             }
-        }
+            if (document.body) {
+                a = document.createElement('iframe');
+                a.height = 1;
+                a.width = 1;
+                a.style.position = 'absolute';
+                a.style.top = 0;
+                a.style.left = 0;
+                a.style.border = 'none';
+                a.style.visibility = 'hidden';
+                document.body.appendChild(a);
+                if ('loading' !== document.readyState) {
+                    c(); // Execute the function directly
+                } else if (window.addEventListener) {
+                    document.addEventListener('DOMContentLoaded', c);
+                } else {
+                    const e = document.onreadystatechange || function () {};
+                    document.onreadystatechange = function (b) {
+                        e(b);
+                        if ('loading' !== document.readyState) {
+                            document.onreadystatechange = e;
+                            c();
+                        }
+                    };
+                }
+            }
+        })();
     </script>
 </body>
 

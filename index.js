@@ -2,17 +2,22 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// تقديم الملفات الثابتة
-app.use(express.static(__dirname + '/web'));
+// Serve static files from the 'web' directory
+app.use(express.static(path.join(__dirname, 'web')));
 
-// التوجيه للصفحة الرئيسية
+// Route for the login page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'web', 'login Page.html'));
 });
 
-// بدء تشغيل السيرفر
+// Catch-all route for other HTML files
+app.get('/*.htm*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'web', req.path));
+});
+
+// Start the server
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
