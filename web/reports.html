@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +9,18 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+        :root {
+            --primary-color: #ff0000;
+            --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            background: var(--bg-gradient);
             color: #fff;
             font-family: 'Orbitron', sans-serif;
             display: flex;
@@ -21,18 +30,17 @@
 
         .sidebar {
             width: 250px;
-            background: linear-gradient(180deg, #2a2a2a, #000);
+            background: var(--sidebar-gradient);
             padding: 20px;
             position: fixed;
             height: 100vh;
             box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
-            border-right: 2px solid #ff0000;
+            border-right: 2px solid var(--primary-color);
         }
 
         .sidebar nav ul {
             list-style: none;
             padding: 0;
-            margin: 0;
         }
 
         .sidebar nav ul li {
@@ -41,14 +49,13 @@
         }
 
         .sidebar nav ul li a {
-            color: #ff0000;
+            color: var(--primary-color);
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
             display: block;
             padding: 10px;
             border-radius: 5px;
-            transition: 0.3s;
         }
 
         .sidebar nav ul li a:hover {
@@ -65,10 +72,10 @@
         }
 
         .report-container {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-bg);
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            box-shadow: var(--card-shadow);
             text-align: center;
             width: 90%;
             max-width: 900px;
@@ -112,7 +119,7 @@
 
         .filter-button {
             padding: 12px 20px;
-            background: red;
+            background: var(--primary-color);
             color: white;
             border: none;
             border-radius: 8px;
@@ -145,9 +152,9 @@
         .report-item:hover {
             background: rgba(255, 255, 255, 0.3);
         }
-
     </style>
 </head>
+
 <body>
     <aside class="sidebar">
         <nav>
@@ -156,7 +163,7 @@
                 <li><a href="../web/add_building.htm">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
                 <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment .htm">Payment</a></li>
+                <li><a href="../web/payment.htm">Payment</a></li>
                 <li><a href="../web/US.htm">About Us</a></li>
                 <li><a href="../web/logout.htm">Logout</a></li>
             </ul>
@@ -208,4 +215,5 @@
         window.onload = filterReports;
     </script>
 </body>
+
 </html>
