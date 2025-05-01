@@ -1,72 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RERS System</title>
-    <link rel="stylesheet" href="styles.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        
+
+        :root {
+            --primary-color: #ff0000;
+            --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
+            --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            background: var(--bg-gradient);
             color: #fff;
             font-family: 'Orbitron', sans-serif;
             display: flex;
-            align-items: center;
-            justify-content: center;
             height: 100vh;
             overflow: hidden;
         }
-        .container {
-            display: flex;
-            width: 100%;
-        }
+
         .sidebar {
-            width: 260px;
-            background: linear-gradient(180deg, #2a2a2a, #000);
+            width: 250px;
+            background: var(--sidebar-gradient);
             padding: 20px;
             position: fixed;
             height: 100vh;
             box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
-            border-right: 2px solid #ff0000;
-            transition: all 0.3s ease;
+            border-right: 2px solid var(--primary-color);
         }
-        .sidebar:hover {
-            box-shadow: 6px 0 20px rgba(255, 0, 0, 0.8);
-        }
+
         .sidebar nav ul {
             list-style: none;
             padding: 0;
         }
+
         .sidebar nav ul li {
             padding: 15px 0;
             text-align: center;
         }
+
         .sidebar nav ul li a {
-            color: #ff0000;
+            color: var(--primary-color);
             text-decoration: none;
             font-size: 18px;
             font-weight: bold;
-            text-transform: uppercase;
             display: block;
-            transition: 0.3s;
             padding: 10px;
             border-radius: 5px;
         }
+
         .sidebar nav ul li a:hover {
             background: rgba(255, 0, 0, 0.2);
             color: #fff;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
         }
+
         .content {
-            margin-left: 280px;
+            margin-left: 270px;
             padding: 40px;
-            width: calc(100% - 280px);
+            width: calc(100% - 270px);
             text-align: center;
         }
+
         #clock-container {
             display: flex;
             justify-content: center;
@@ -74,22 +76,30 @@
             height: 300px;
             margin-top: 50px;
         }
+
         #clock {
             font-size: 160px;
-            color: #ff0000;
+            color: var(--primary-color);
             text-shadow: 0 0 40px rgba(255, 0, 0, 1),
-                         0 0 60px rgba(255, 0, 0, 0.8),
-                         0 0 80px rgba(255, 0, 0, 0.6),
-                         0 0 100px rgba(255, 0, 0, 0.4);
+                0 0 60px rgba(255, 0, 0, 0.8),
+                0 0 80px rgba(255, 0, 0, 0.6),
+                0 0 100px rgba(255, 0, 0, 0.4);
             font-family: 'Orbitron', sans-serif;
             display: block;
             letter-spacing: 10px;
             animation: pulse 1.5s infinite alternate;
         }
+
         @keyframes pulse {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.05); }
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.05);
+            }
         }
+
         .glow {
             position: absolute;
             bottom: 10%;
@@ -100,34 +110,33 @@
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <aside class="sidebar" id="sidebar">
-            <nav>
-                <ul>
-                    <li><a href="../web/dashboard.htm">dashboard</a></li>
-                    <li><a href="../web/add_building.htm">Add Buildings</a></li>
-                    <li><a href="../web/monitoring.html">Monitoring</a></li>
-                    <li><a href="../web/reports.html">Reports</a></li>
-                    <li><a href="../web/payment .htm">Payment</a></li>
-                    <li><a href="../web/US.htm">About Us</a></li>
-                    <li><a href="../web/logout.htm">Logout</a></li>
-                </ul>
-            </nav>
-        </aside>
-        
-        <main class="content">
-            <section id="dashboard">
-                <h1>Welcome to RERS System</h1>
-                <p>Monitor and manage your emergency response efficiently.</p>
-            </section>
-            
-            <section id="clock-container">
-                <span id="clock"></span>
-                <div class="glow"></div>
-            </section>
-        </main>
-    </div>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="../web/dashboard.htm">dashboard</a></li>
+                <li><a href="../web/add_building.htm">Add Buildings</a></li>
+                <li><a href="../web/monitoring.html">Monitoring</a></li>
+                <li><a href="../web/reports.html">Reports</a></li>
+                <li><a href="../web/payment.htm">Payment</a></li>
+                <li><a href="../web/US.htm">About Us</a></li>
+                <li><a href="../web/logout.htm">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <section id="dashboard">
+            <h1>Welcome to RERS System</h1>
+            <p>Monitor and manage your emergency response efficiently.</p>
+        </section>
+
+        <section id="clock-container">
+            <span id="clock"></span>
+            <div class="glow"></div>
+        </section>
+    </main>
 
     <script type="module" src="../JS/firebase.js"></script>
 
@@ -143,4 +152,5 @@
         updateClock();
     </script>
 </body>
+
 </html>
