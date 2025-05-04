@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,9 +39,9 @@
         const isValidURL = (url) => {
             try {
                 new URL(url);
-                return url.startsWith("https://") || url.startsWith("http://") || 
-                       url.startsWith("rtsp://") || url.startsWith("ws://") || 
-                       url.startsWith("wss://");
+                return url.startsWith("https://") || url.startsWith("http://") ||
+                    url.startsWith("rtsp://") || url.startsWith("ws://") ||
+                    url.startsWith("wss://");
             } catch {
                 return false;
             }
@@ -60,7 +61,7 @@
 
             let notificationMethod = "Email";
             let notificationMessage = `Sensor Alert: ${sensor.type} at ${sensor.location || building.location || "Unknown"} (Building: ${building.buildingName || "N/A"}) - Highest Risk Level: ${highestRiskLevel}`;
-            
+
             if (highestRiskLevel >= 3) {
                 notificationMethod = "Email and SMS (High Priority)";
                 notificationMessage += " - Immediate action required!";
@@ -96,20 +97,20 @@
                     const building = doc.data();
                     if (building.cameras && Array.isArray(building.cameras)) {
                         building.cameras.forEach((camera) => {
-                            if (cameraCount >= 6) return;
+                            if (displayMode !== "cameras" && cameraCount >= 6) return;
                             // Get the connection type and URL from connections object
-                            const connectionType = camera.connections && Object.keys(camera.connections).length > 0 
+                            const connectionType = camera.connections && Object.keys(camera.connections).length > 0
                                 ? Object.keys(camera.connections)[0] : "N/A";
                             const cameraUrl = camera.connections && camera.connections[connectionType] && camera.connections[connectionType][0]
                                 ? camera.connections[connectionType][0]
                                 : camera.url;
-                            
+
                             if (isValidURL(cameraUrl)) {
                                 // Only convert YouTube URLs to embed format
                                 const displayUrl = (cameraUrl.includes('youtube.com') || cameraUrl.includes('youtu.be'))
                                     ? convertToEmbedUrl(cameraUrl)
                                     : cameraUrl;
-                                
+
                                 camerasHTML += `
                                     <div class="camera-feed">
                                         <h4>${camera.location || building.location || "Unknown"}</h4>
@@ -123,13 +124,15 @@
                 });
 
                 // Pad with empty camera fields if less than 6
-                while (cameraCount < 6) {
-                    camerasHTML += `
-                        <div class="camera-feed">
-                            <h4>Camera ${cameraCount + 1}</h4>
-                            <div class="placeholder">No Camera Assigned</div>
-                        </div>`;
-                    cameraCount++;
+                if (displayMode !== "cameras") {
+                    while (cameraCount < 6) {
+                        camerasHTML += `
+                            <div class="camera-feed">
+                                <h4>Camera ${cameraCount + 1}</h4>
+                                <div class="placeholder">No Camera Assigned</div>
+                            </div>`;
+                        cameraCount++;
+                    }
                 }
 
                 container.innerHTML = camerasHTML || "<p>No cameras available</p>";
@@ -505,6 +508,7 @@
         }
     </style>
 </head>
+
 <body>
     <aside class="sidebar">
         <nav>
@@ -545,6 +549,7 @@
             <div class="sensor-list" id="sensorList"></div>
         </div>
     </div>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a8623809de53d4',t:'MTc0NjM2NTc1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'93a8623809de53d4',t:'MTc0NjM2NTc1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
 </body>
+
 </html>
