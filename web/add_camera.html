@@ -1,355 +1,575 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Add Camera | RERS System</title>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script
+      src="https://kit.fontawesome.com/a076d05399.js"
+      crossorigin="anonymous"
+    ></script>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, doc, updateDoc, arrayUnion, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        doc,
+        updateDoc,
+        getDocs,
+        query,
+        where,
+        arrayUnion,
+      } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
-            authDomain: "rersweb.firebaseapp.com",
-            projectId: "rersweb",
-            storageBucket: "rersweb.firebasestorage.app",
-            messagingSenderId: "432558250053",
-            appId: "1:432558250053:web:07fc91665244a2d93feb2c"
-        };
+      const firebaseConfig = {
+        apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
+        authDomain: "rersweb.firebaseapp.com",
+        projectId: "rersweb",
+        storageBucket: "rersweb.firebasestorage.app",
+        messagingSenderId: "432558250053",
+        appId: "1:432558250053:web:07fc91665244a2d93feb2c",
+      };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
 
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                history.pushState({}, '', '../web/login Page.html');
-                window.location.href = '../web/login Page.html';
-            }
-        });
+      async function populateBuildingData() {
+        try {
+          const user = auth.currentUser;
+          if (!user) {
+            console.log("User not authenticated");
+            return;
+          }
 
-        async function validateUniqueId(uniqueId) {
-            const querySnapshot = await getDocs(collection(db, "buildings"));
-            for (const doc of querySnapshot.docs) {
-                const building = doc.data();
-                if (building.cameras?.some(cam => cam.uniqueId === uniqueId)) {
-                    return false;
-                }
-            }
-            return true;
+          const buildingSelect = document.getElementById("buildingName");
+          buildingSelect.innerHTML =
+            '<option value="">Select a Building</option>';
+
+          const q = query(
+            collection(db, "buildings"),
+            where("addedBy", "==", user.email)
+          );
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const option = document.createElement("option");
+            option.value = doc.id;
+            option.text = data.buildingName;
+            buildingSelect.appendChild(option);
+          });
+
+          console.log(
+            "Buildings fetched for camera:",
+            querySnapshot.docs.map((doc) => doc.data())
+          );
+        } catch (error) {
+          console.error("Error fetching buildings:", error);
         }
+      }
 
-        window.addCamera = function () {
-            onAuthStateChanged(auth, async (user) => {
-                const addButton = document.querySelector('button[onclick="addCamera()"]');
-                const loading = document.getElementById("loading");
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          window.location.href = "../web/loginPage.html";
+        } else {
+          populateBuildingData();
+        }
+      });
 
-                if (!user) {
-                    alert("You must be logged in to add a camera!");
-                    return;
-                }
+      async function validateUniqueId(uniqueId) {
+        const querySnapshot = await getDocs(collection(db, "buildings"));
+        for (const doc of querySnapshot.docs) {
+          const building = doc.data();
+          if (building.cameras?.some((cam) => cam.uniqueId === uniqueId)) {
+            return false;
+          }
+        }
+        return true;
+      }
 
-                const buildingId = localStorage.getItem('currentBuildingId');
-                if (!buildingId) {
-                    alert("No building selected. Please add a building first.");
-                    history.pushState({}, '', 'add_building.htm');
-                    window.location.href = 'add_building.htm';
-                    return;
-                }
+      // Connection type toggles
+      const connectionRadios = document.querySelectorAll('input[name="connection"]');
+      connectionRadios.forEach(radio => {
+        radio.addEventListener('change', function () {
+          document.querySelectorAll('.connection-details').forEach(details => {
+            details.style.display = 'none';
+          });
+          const detailsDiv = document.getElementById(this.value + "Connection");
+          if (this.checked && detailsDiv) {
+            detailsDiv.style.display = 'block';
+          }
+        });
+      });
 
-                const cameraLocation = document.getElementById("cameraLocation").value.trim();
-                const cameraURL = document.getElementById("cameraURL").value.trim();
-                const uniqueId = document.getElementById("uniqueId").value.trim();
-                const isPrimary = document.getElementById("primaryCamera").checked;
-                const connectionType = document.getElementById("connectionType").value;
+      window.addCamera = function () {
+        onAuthStateChanged(auth, async (user) => {
+          const addButton = document.querySelector(
+            'button[onclick="addCamera()"]'
+          );
+          const loading = document.getElementById("loading");
 
-                if (!cameraLocation || !cameraURL || !uniqueId) {
-                    alert("Please fill in all camera fields!");
-                    return;
-                }
-                if (!/^https?:\/\//i.test(cameraURL)) {
-                    alert("Please enter a valid URL starting with http:// or https://");
-                    return;
-                }
-                if (!(await validateUniqueId(uniqueId))) {
-                    alert("Unique ID already exists. Please choose another.");
-                    return;
-                }
+          if (!user) {
+            alert("You must be logged in to add a camera!");
+            return;
+          }
 
-                addButton.disabled = true;
-                loading.style.display = "block";
+          const buildingId = document.getElementById("buildingName").value;
+          if (!buildingId) {
+            alert("No building selected. Please select a building.");
+            window.location.href = "add_building.htm";
+            return;
+          }
 
-                const cameraData = {
-                    location: cameraLocation,
-                    url: cameraURL,
-                    uniqueId,
-                    isPrimary,
-                    connectionType,
-                    addedBy: user.email,
-                    timestamp: new Date().toISOString()
-                };
+          const cameraLocation = document
+            .getElementById("cameraLocation")
+            .value.trim();
+          const cameraURL = document.getElementById("cameraURL").value.trim();
+          const uniqueId = document.getElementById("uniqueId").value.trim();
+          const isPrimary = document.getElementById("primaryCamera").checked;
 
-                try {
-                    const buildingRef = doc(db, "buildings", buildingId);
-                    await updateDoc(buildingRef, {
-                        cameras: arrayUnion(cameraData)
-                    });
-                    alert("Camera added successfully!");
-                    localStorage.removeItem('currentBuildingId');
-                    history.pushState({}, '', 'dashboard.htm');
-                    window.location.href = 'dashboard.htm';
-                } catch (error) {
-                    console.error("Error adding camera:", error);
-                    alert("Failed to add camera. Please try again.");
-                } finally {
-                    addButton.disabled = false;
-                    loading.style.display = "none";
-                }
+          if (!cameraLocation || !cameraURL || !uniqueId) {
+            alert("Please fill in all camera fields!");
+            return;
+          }
+          if (!/^https?:\/\//i.test(cameraURL)) {
+            alert("Please enter a valid URL starting with http:// or https://");
+            return;
+          }
+          if (!(await validateUniqueId(uniqueId))) {
+            alert("Unique ID already exists. Please choose another.");
+            return;
+          }
+
+          // Get connection details
+          const connections = {};
+          connectionRadios.forEach(radio => {
+            if (radio.checked) {
+              const detailsDiv = document.getElementById(radio.value + "Connection");
+              if (detailsDiv) {
+                const inputs = detailsDiv.querySelectorAll('input');
+                connections[radio.value] = Array.from(inputs).map(input => input.value.trim());
+              }
+            }
+          });
+
+          addButton.disabled = true;
+          loading.style.display = "block";
+
+          const cameraData = {
+            location: cameraLocation,
+            url: cameraURL,
+            uniqueId,
+            isPrimary,
+            connections,
+            addedBy: user.email,
+            timestamp: new Date().toISOString(),
+          };
+
+          try {
+            const buildingRef = doc(db, "buildings", buildingId);
+            await updateDoc(buildingRef, {
+              cameras: arrayUnion(cameraData),
             });
-        };
+            alert("Camera added successfully!");
+            window.location.href = "dashboard.htm";
+          } catch (error) {
+            console.error("Error adding camera:", error);
+            alert("Failed to add camera. Please try again.");
+          } finally {
+            addButton.disabled = false;
+            loading.style.display = "none";
+          }
+        });
+      };
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+      @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap");
 
-        :root {
-            --primary-color: #ff0000;
-            --secondary-color: #00ff00;
-            --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
-            --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
-            --card-bg: rgba(255, 255, 255, 0.1);
-            --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+      :root {
+        --primary-color: #ff0000;
+        --secondary-color: #00ff00;
+        --bg-gradient: radial-gradient(
+          circle,
+          rgba(10, 10, 10, 1) 10%,
+          rgba(0, 0, 0, 1) 80%
+        );
+        --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
+        --card-bg: rgba(255, 255, 255, 0.1);
+        --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg-gradient);
+        color: #fff;
+        font-family: "Orbitron", sans-serif;
+        display: flex;
+        height: 100vh;
+      }
+
+      .sidebar {
+        width: 250px;
+        background: var(--sidebar-gradient);
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+        border-right: 2px solid var(--primary-color);
+      }
+
+      .sidebar nav ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .sidebar nav ul li {
+        padding: 15px 0;
+        text-align: center;
+      }
+
+      .sidebar nav ul li a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: bold;
+        display: block;
+        padding: 10px;
+        border-radius: 5px;
+      }
+
+      .sidebar nav ul li a:hover {
+        background: rgba(255, 0, 0, 0.2);
+        color: #fff;
+      }
+
+      .content {
+        margin-left: 270px;
+        padding: 40px;
+        width: calc(100% - 300px);
+        text-align: center;
+        overflow-y: auto;
+      }
+
+      .form-container {
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        text-align: center;
+        width: 90%;
+        max-width: 600px;
+        margin: auto;
+      }
+
+      .form-container h2 {
+        font-size: 24px;
+        text-shadow: 0 0 10px var(--primary-color);
+        margin-bottom: 20px;
+      }
+
+      .input-group {
+        margin-bottom: 15px;
+      }
+
+      .input-group input {
+        width: 96%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        outline: none;
+      }
+
+      .input-group select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        outline: none;
+      }
+
+      .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-top: 15px;
+      }
+
+      .primary-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+
+      .form-container button {
+        width: 100%;
+        padding: 15px;
+        background: var(--primary-color);
+        color: white;
+        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 18px;
+        transition: 0.3s;
+        margin-top: 20px;
+      }
+
+      .form-container button:hover {
+        background: darkred;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .button-group button {
+        flex: 1;
+      }
+
+      .loading {
+        display: none;
+        font-size: 16px;
+        color: var(--primary-color);
+      }
+
+      .loading::before {
+        content: "";
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--primary-color);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
+      }
 
+      .connection-types {
+        width: 100%;
+        margin: 15px 0;
+        text-align: left;
+      }
+
+      .connection-type {
+        margin-bottom: 10px;
+      }
+
+      .connection-type label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      .connection-type input {
+        margin-right: 10px;
+      }
+
+      .connection-details {
+        margin-left: 25px;
+        margin-top: 5px;
+        display: none;
+      }
+
+      .connection-details input {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: none;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+
+      @media (max-width: 768px) {
         body {
-            margin: 0;
-            padding: 0;
-            background: var(--bg-gradient);
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            display: flex;
-            height: 100vh;
+          flex-direction: column;
         }
 
         .sidebar {
-            width: 250px;
-            background: var(--sidebar-gradient);
-            padding: 20px;
-            position: fixed;
-            height: 100vh;
-            box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
-            border-right: 2px solid var(--primary-color);
-        }
-
-        .sidebar nav ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .sidebar nav ul li {
-            padding: 15px 0;
-            text-align: center;
-        }
-
-        .sidebar nav ul li a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: 18px;
-            font-weight: bold;
-            display: block;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .sidebar nav ul li a:hover {
-            background: rgba(255, 0, 0, 0.2);
-            color: #fff;
+          width: 100%;
+          height: auto;
+          position: static;
+          border-right: none;
+          border-bottom: 2px solid var(--primary-color);
+          box-shadow: none;
         }
 
         .content {
-            margin-left: 270px;
-            padding: 40px;
-            width: calc(100% - 270px);
-            text-align: center;
-            overflow-y: auto;
+          margin-left: 0;
+          width: 100%;
+          padding: 20px;
         }
 
         .form-container {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: var(--card-shadow);
-            text-align: center;
-            width: 90%;
-            max-width: 600px;
-            margin: auto;
+          padding: 15px;
         }
-
-        .form-container h2 {
-            font-size: 24px;
-            text-shadow: 0 0 10px var(--primary-color);
-            margin-bottom: 20px;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            outline: none;
-        }
-
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            margin-top: 15px;
-        }
-
-        .primary-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-
-        .form-container button {
-            width: 100%;
-            padding: 15px;
-            background: var(--primary-color);
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: 0.3s;
-            margin-top: 20px;
-        }
-
-        .form-container button:hover {
-            background: darkred;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .button-group button {
-            flex: 1;
-        }
-
-        .loading {
-            display: none;
-            font-size: 16px;
-            color: var(--primary-color);
-        }
-
-        .loading::before {
-            content: "";
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--primary-color);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: static;
-                border-right: none;
-                border-bottom: 2px solid var(--primary-color);
-                box-shadow: none;
-            }
-
-            .content {
-                margin-left: 0;
-                width: 100%;
-                padding: 20px;
-            }
-
-            .form-container {
-                padding: 15px;
-            }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <aside class="sidebar">
-        <nav>
-            <ul>
-                <li><a href="../web/dashboard.htm">dashboard</a></li>
-                <li><a href="../web/add_building.htm">Add Buildings</a></li>
-                <li><a href="../web/monitoring.html">Monitoring</a></li>
-                <li><a href="../web/reports.html">Reports</a></li>
-                <li><a href="../web/payment.htm">Payment</a></li>
-                <li><a href="../web/US.htm">About Us</a></li>
-                <li><a href="../web/logout.htm">Logout</a></li>
-            </ul>
-        </nav>
+      <nav>
+        <ul>
+          <li><a href="../web/dashboard.htm">dashboard</a></li>
+          <li><a href="../web/add_building.htm">Add Buildings</a></li>
+          <li><a href="../web/monitoring.html">Monitoring</a></li>
+          <li><a href="../web/reports.html">Reports</a></li>
+          <li><a href="../web/payment.htm">Payment</a></li>
+          <li><a href="../web/US.htm">About Us</a></li>
+          <li><a href="../web/logout.htm">Logout</a></li>
+        </ul>
+      </nav>
     </aside>
 
     <div class="content">
-        <div class="form-container">
-            <h2>Add New Camera</h2>
-            <div class="input-group">
-                <input type="text" id="cameraLocation" placeholder="Camera Location">
-            </div>
-            <div class="input-group">
-                <input type="text" id="cameraURL" placeholder="Camera URL (e.g., https://...)">
-            </div>
-            <div class="input-group">
-                <input type="text" id="uniqueId" placeholder="Unique Camera ID">
-            </div>
-            <div class="input-group">
-                <select id="connectionType">
-                    <option value="rtsp">RTSP</option>
-                    <option value="http">HTTP</option>
-                    <option value="https">HTTPS</option>
-                    <option value="websocket">WebSocket</option>
-                </select>
-            </div>
-            <div class="checkbox-wrapper">
-                <input type="checkbox" id="primaryCamera" class="primary-checkbox">
-                <label for="primaryCamera">Set as Primary Camera</label>
-            </div>
-            <p class="loading" id="loading">Adding camera...</p>
-            <div class="button-group">
-                <button onclick="history.pushState({}, '', 'add_sensor.html'); window.location.href='add_sensor.html'">Previous</button>
-                <button onclick="addCamera()">Add Camera</button>
-                <button onclick="history.pushState({}, '', 'dashboard.htm'); window.location.href='dashboard.htm'">Finish</button>
-            </div>
+      <div class="form-container">
+        <h2>Add New Camera</h2>
+        <div class="input-group">
+          <select id="buildingName"></select>
         </div>
-    </div>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9390c0b5d6f7a05f',t:'MTc0NjExNzk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+        <div class="input-group">
+          <input
+            type="text"
+            id="cameraLocation"
+            placeholder="Camera Location"
+          />
+        </div>
+        <div class="input-group">
+          <input
+            type="text"
+            id="cameraURL"
+            placeholder="Camera URL (e.g., https://...)"
+          />
+        </div>
+        <div class="input-group">
+          <input type="text" id="uniqueId" placeholder="Unique Camera ID" />
+        </div>
 
+        <div class="connection-types">
+          <h3>Connection Types</h3>
+          <div class="connection-type">
+            <label><input type="radio" name="connection" value="rtps"> RTSP</label>
+          
+          </div>
+          <div class="connection-type">
+            <label><input type="radio" name="connection" value="http"> HTTP</label>
+           
+          </div>
+          <div class="connection-type">
+            <label><input type="radio" name="connection" value="https"> HTTPS</label>
+            
+          </div>
+          <div class="connection-type">
+            <label><input type="radio" name="connection" value="websocket"> WebSocket</label>
+            
+          </div>
+        </div>
+
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="primaryCamera" class="primary-checkbox" />
+          <label for="primaryCamera">Set as Primary Camera</label>
+        </div>
+
+        <p class="loading" id="loading">Adding camera...</p>
+        <div class="button-group">
+          <button onclick="window.location.href='add_sensor.html'">
+            Previous
+          </button>
+          <button onclick="addCamera()">Add Camera</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9390c0b5d6f7a05f',t:'MTc0NjExNzk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'93a903a2ac32b07f',t:'MTc0NjM3MjM2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b1 = b.getElementsByTagName("head")[0].appendChild(a);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
 </html>

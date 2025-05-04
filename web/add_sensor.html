@@ -287,10 +287,6 @@
                 <label for="noGps">Does not have built-in GPS</label>
             </div>
 
-            <div class="input-group hidden" id="riskLevelGroup">
-                <input type="number" id="riskLevel" placeholder="Risk Level (1-3)" min="1" max="3">
-            </div>
-
             <div class="input-group hidden" id="noGpsFields">
                 <input type="text" id="sensorLocation" placeholder="Sensor Location">
                 <select id="buildingName"></select>
@@ -330,7 +326,7 @@
             <div class="risk-levels">
                 <h3>Risk Level Configuration</h3>
                 <div class="risk-level low">
-                    <input type="checkbox" id="riskLow" value="1">
+                    <input type="checkbox" name="riskLevel" id="riskLow" value="1">
                     <label for="riskLow">Level 1 (Low Risk)</label>
                 </div>
                 <div class="risk-description" id="descLow">
@@ -338,7 +334,7 @@
                 </div>
 
                 <div class="risk-level medium">
-                    <input type="checkbox" id="riskMedium" value="2">
+                    <input type="checkbox" name="riskLevel" id="riskMedium" value="2">
                     <label for="riskMedium">Level 2 (Medium Risk)</label>
                 </div>
                 <div class="risk-description" id="descMedium">
@@ -346,7 +342,7 @@
                 </div>
 
                 <div class="risk-level high">
-                    <input type="checkbox" id="riskHigh" value="3">
+                    <input type="checkbox" name="riskLevel" id="riskHigh" value="3">
                     <label for="riskHigh">Level 3 (High Risk)</label>
                 </div>
                 <div class="risk-description" id="descHigh">
@@ -364,7 +360,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -382,7 +378,6 @@
 
         const hasGps = document.getElementById('hasGps');
         const noGps = document.getElementById('noGps');
-        const riskLevelGroup = document.getElementById('riskLevelGroup');
         const noGpsFields = document.getElementById('noGpsFields');
 
         // Connection type toggles
@@ -400,7 +395,7 @@
         });
 
         // Risk level description toggles
-        const riskCheckboxes = document.querySelectorAll('.risk-level input[type="checkbox"]');
+        const riskCheckboxes = document.querySelectorAll('input[name="riskLevel"]');
         riskCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function () {
                 const descDiv = document.getElementById(`desc${this.id.replace('risk', '')}`);
@@ -411,10 +406,7 @@
         hasGps.addEventListener('change', function () {
             if (this.checked) {
                 noGps.checked = false;
-                riskLevelGroup.classList.remove('hidden');
                 noGpsFields.classList.add('hidden');
-            } else if (!noGps.checked) {
-                riskLevelGroup.classList.add('hidden');
             }
         });
 
@@ -422,30 +414,52 @@
             if (this.checked) {
                 hasGps.checked = false;
                 noGpsFields.classList.remove('hidden');
-                riskLevelGroup.classList.remove('hidden');
-            } else if (!hasGps.checked) {
+            } else {
                 noGpsFields.classList.add('hidden');
-                riskLevelGroup.classList.add('hidden');
             }
         });
 
         async function populateBuildingData() {
-            const buildingId = localStorage.getItem('currentBuildingId');
-            if (buildingId) {
-                const buildingRef = doc(db, "buildings", buildingId);
-                const buildingSnap = await getDoc(buildingRef);
-                if (buildingSnap.exists()) {
-                    const data = buildingSnap.data();
-                    const buildingSelect = document.getElementById('buildingName');
-                    const floorSelect = document.getElementById('floorNumber');
-
-                    buildingSelect.innerHTML = `<option value="${data.buildingName}">${data.buildingName}</option>`;
-
-                    floorSelect.innerHTML = '';
-                    for (let i = 1; i <= parseInt(data.floors); i++) {
-                        floorSelect.innerHTML += `<option value="${i}">Floor ${i}</option>`;
-                    }
+            try {
+                const user = auth.currentUser;
+                if (!user) {
+                    console.log("User not authenticated");
+                    return;
                 }
+
+                const buildingSelect = document.getElementById('buildingName');
+                const floorSelect = document.getElementById('floorNumber');
+                buildingSelect.innerHTML = '<option value="">Select a Building</option>';
+
+                const q = query(collection(db, "buildings"), where("addedBy", "==", user.email));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.text = data.buildingName;
+                    buildingSelect.appendChild(option);
+                });
+
+                // Populate floors dynamically when a building is selected
+                buildingSelect.addEventListener('change', async function () {
+                    const selectedBuildingId = this.value;
+                    floorSelect.innerHTML = '<option value="">Select a Floor</option>';
+                    if (selectedBuildingId) {
+                        const buildingRef = doc(db, "buildings", selectedBuildingId);
+                        const buildingSnap = await getDoc(buildingRef);
+                        if (buildingSnap.exists()) {
+                            const data = buildingSnap.data();
+                            for (let i = 1; i <= parseInt(data.floors); i++) {
+                                floorSelect.innerHTML += `<option value="${i}">Floor ${i}</option>`;
+                            }
+                        }
+                    }
+                });
+
+                console.log("Buildings fetched:", querySnapshot.docs.map(doc => doc.data()));
+            } catch (error) {
+                console.error("Error fetching buildings:", error);
             }
         }
 
@@ -456,21 +470,22 @@
                     return;
                 }
 
-                const buildingId = localStorage.getItem('currentBuildingId');
+                const buildingId = document.getElementById("buildingName").value;
                 if (!buildingId) {
-                    alert("No building selected. Please add a building first.");
-                    window.location.href = 'add_building.htm';
+                    alert("No building selected. Please select a building.");
                     return;
                 }
 
                 const sensorType = document.getElementById("sensorType").value;
-                const selectedRisk = document.querySelector('.risk-level input[type="checkbox"]:checked');
-                if (!selectedRisk) {
-                    alert("Please select a risk level!");
+                const selectedRisks = document.querySelectorAll('input[name="riskLevel"]:checked');
+                if (selectedRisks.length === 0) {
+                    alert("Please select at least one risk level!");
                     return;
                 }
-                const riskLevel = selectedRisk.value;
-                const riskDescription = document.getElementById(`desc${selectedRisk.id.replace('risk', '')}`).querySelector('input').value;
+                const riskLevels = Array.from(selectedRisks).map(risk => ({
+                    level: parseInt(risk.value),
+                    description: document.getElementById(`desc${risk.id.replace('risk', '')}`).querySelector('input').value
+                }));
 
                 // Get connection details
                 const connections = {};
@@ -482,11 +497,6 @@
                     }
                 });
 
-                if ((hasGps.checked || noGps.checked) && !riskLevel) {
-                    alert("Please select a risk level!");
-                    return;
-                }
-
                 if (noGps.checked && !document.getElementById("sensorLocation").value.trim()) {
                     alert("Please enter a sensor location!");
                     return;
@@ -494,11 +504,17 @@
 
                 try {
                     const buildingRef = doc(db, "buildings", buildingId);
+                    const buildingSnap = await getDoc(buildingRef);
+                    if (!buildingSnap.exists()) {
+                        alert("Selected building does not exist.");
+                        return;
+                    }
+                    const buildingData = buildingSnap.data();
+
                     const sensorData = {
                         type: sensorType,
-                        riskLevel: parseInt(riskLevel),
-                        riskDescription: riskDescription,
-                        isPrimary: true, // Set as primary by default
+                        riskLevels: riskLevels,
+                        isPrimary: true,
                         connections,
                         status: "inactive",
                         uniqueId: `${buildingId}-${sensorType}-${Date.now()}`,
@@ -511,7 +527,7 @@
                     } else if (noGps.checked) {
                         sensorData.hasGps = false;
                         sensorData.location = document.getElementById("sensorLocation").value.trim();
-                        sensorData.buildingName = document.getElementById("buildingName").value;
+                        sensorData.buildingName = buildingData.buildingName;
                         sensorData.floor = document.getElementById("floorNumber").value;
                     }
 
@@ -528,7 +544,14 @@
             });
         };
 
-        populateBuildingData();
+        // Call populateBuildingData when the page loads
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = '../web/loginPage.html';
+            } else {
+                populateBuildingData();
+            }
+        });
     </script>
     <script>
         (function () {
@@ -570,6 +593,6 @@
             }
         })();
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a903a1ee4cbfa9',t:'MTc0NjM3MjM2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>

@@ -38,28 +38,33 @@
         const isValidURL = (url) => {
             try {
                 new URL(url);
-                return url.startsWith("https://");
+                return url.startsWith("https://") || url.startsWith("http://") || 
+                       url.startsWith("rtsp://") || url.startsWith("ws://") || 
+                       url.startsWith("wss://");
             } catch {
                 return false;
             }
         };
 
         function notifyParty(sensor, building) {
-            const sensorId = sensor.uniqueId || `${sensor.type}-${sensor.location}`;
+            const sensorId = sensor.uniqueId || `${sensor.type}-${sensor.location || 'unknown'}`;
             if (notifiedSensors.has(sensorId)) return; // Prevent duplicate notifications
 
             const contacts = building.contacts || {};
             const contactEmail = contacts.email || "admin@example.com";
             const contactPhone = contacts.phone || "+1234567890";
-            const riskLevel = sensor.riskLevel || 1;
+            // Determine the highest risk level for notification
+            const highestRiskLevel = sensor.riskLevels && sensor.riskLevels.length > 0
+                ? Math.max(...sensor.riskLevels.map(r => r.level))
+                : 1;
 
             let notificationMethod = "Email";
-            let notificationMessage = `Sensor Alert: ${sensor.type} at ${sensor.location || building.location || "Unknown"} (Building: ${building.name || "N/A"}) - Risk Level: ${riskLevel}`;
+            let notificationMessage = `Sensor Alert: ${sensor.type} at ${sensor.location || building.location || "Unknown"} (Building: ${building.buildingName || "N/A"}) - Highest Risk Level: ${highestRiskLevel}`;
             
-            if (riskLevel >= 3) {
+            if (highestRiskLevel >= 3) {
                 notificationMethod = "Email and SMS (High Priority)";
                 notificationMessage += " - Immediate action required!";
-            } else if (riskLevel === 2) {
+            } else if (highestRiskLevel === 2) {
                 notificationMethod = "Email (Medium Priority)";
                 notificationMessage += " - Please review.";
             } else {
@@ -73,7 +78,7 @@
             notifiedSensors.add(sensorId);
         }
 
-        function loadCameras(userId, displayMode) {
+        function loadCameras(userEmail, displayMode) {
             const container = document.getElementById("cameraGrid");
             if (displayMode === "sensors") {
                 container.style.display = "none";
@@ -82,7 +87,7 @@
             container.style.display = "grid";
             container.innerHTML = '<p class="loading">Loading Cameras...</p>';
 
-            const q = query(collection(db, "buildings"), where("userId", "==", userId));
+            const q = query(collection(db, "buildings"), where("addedBy", "==", userEmail));
             onSnapshot(q, (snapshot) => {
                 let camerasHTML = "";
                 let cameraCount = 0;
@@ -91,14 +96,25 @@
                     const building = doc.data();
                     if (building.cameras && Array.isArray(building.cameras)) {
                         building.cameras.forEach((camera) => {
-                            if (isValidURL(camera.url)) {
-                                if (cameraCount >= 6) return;
-                                const embedUrl = convertToEmbedUrl(camera.url);
+                            if (cameraCount >= 6) return;
+                            // Get the connection type and URL from connections object
+                            const connectionType = camera.connections && Object.keys(camera.connections).length > 0 
+                                ? Object.keys(camera.connections)[0] : "N/A";
+                            const cameraUrl = camera.connections && camera.connections[connectionType] && camera.connections[connectionType][0]
+                                ? camera.connections[connectionType][0]
+                                : camera.url;
+                            
+                            if (isValidURL(cameraUrl)) {
+                                // Only convert YouTube URLs to embed format
+                                const displayUrl = (cameraUrl.includes('youtube.com') || cameraUrl.includes('youtu.be'))
+                                    ? convertToEmbedUrl(cameraUrl)
+                                    : cameraUrl;
+                                
                                 camerasHTML += `
                                     <div class="camera-feed">
-                                        <h4>${camera.name || "Camera"} (${camera.location || building.location || "Unknown"})</h4>
-                                        <iframe src="${embedUrl}" width="100%" height="250px" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                                        <p>Unique ID: ${camera.uniqueId || "N/A"} | Connection: ${camera.connectionType || "N/A"}</p>
+                                        <h4>${camera.location || building.location || "Unknown"}</h4>
+                                        <iframe src="${displayUrl}" width="100%" height="250px" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                        <p>Unique ID: ${camera.uniqueId || "N/A"} | Connection: ${connectionType}</p>
                                     </div>`;
                                 cameraCount++;
                             }
@@ -123,7 +139,7 @@
             });
         }
 
-        function loadSensors(userId, displayMode, filter = "all", searchQuery = "") {
+        function loadSensors(userEmail, displayMode, filter = "all", searchQuery = "") {
             const container = document.getElementById("sensorList");
             if (displayMode === "cameras") {
                 container.style.display = "none";
@@ -132,7 +148,7 @@
             container.style.display = "flex";
             container.innerHTML = '<p class="loading">Loading Sensors...</p>';
 
-            const q = query(collection(db, "buildings"), where("userId", "==", userId));
+            const q = query(collection(db, "buildings"), where("addedBy", "==", userEmail));
             onSnapshot(q, (snapshot) => {
                 let sensorsHTML = "";
                 let sensorCount = 0;
@@ -143,17 +159,27 @@
                     sensorsArray.forEach((sensor) => {
                         if (sensorCount >= 10) return;
                         if (filter !== "all" && sensor.status !== filter) return;
-                        const searchString = `${sensor.type} ${sensor.location} ${sensor.riskLevel}`.toLowerCase();
+                        const searchString = `${sensor.type} ${sensor.location || ''} ${sensor.riskLevels?.map(r => r.level).join(' ') || ''}`.toLowerCase();
                         if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
 
-                        const riskLevel = sensor.riskLevel || "Unknown";
-                        const state = riskLevel >= 3 ? "Danger" : "Normal";
+                        // Determine highest risk level for state
+                        const highestRiskLevel = sensor.riskLevels && sensor.riskLevels.length > 0
+                            ? Math.max(...sensor.riskLevels.map(r => r.level))
+                            : 1;
+                        const state = highestRiskLevel >= 3 ? "Danger" : "Normal";
+                        // Format risk levels and descriptions
+                        const riskLevelsText = sensor.riskLevels && sensor.riskLevels.length > 0
+                            ? sensor.riskLevels.map(r => `Level ${r.level} (${r.description || "No description"})`).join(', ')
+                            : "Unknown";
+                        // Get connection type
+                        const connectionType = sensor.connections ? Object.keys(sensor.connections)[0] || "N/A" : "N/A";
+
                         sensorsHTML += `
                             <div class="sensor-item ${sensor.status || "unknown"} ${state.toLowerCase()}">
                                 <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location || building.location || "Unknown"}<br>
-                                Building: ${sensor.buildingName || "N/A"} | Floor: ${sensor.floor || "N/A"} | Zone: ${sensor.zone || "N/A"}<br>
-                                Status: ${sensor.status || "unknown"} | State: ${state} | Risk Level: ${riskLevel}<br>
-                                Activated: ${sensor.activated ? "Yes" : "No"} | Connection: ${sensor.connectionType || "N/A"}<br>
+                                Building: ${sensor.buildingName || building.buildingName || "N/A"} | Floor: ${sensor.floor || "N/A"} | Zone: ${sensor.zone || "N/A"}<br>
+                                Status: ${sensor.status || "unknown"} | State: ${state} | Risk Levels: ${riskLevelsText}<br>
+                                Activated: ${sensor.activated ? "Yes" : "No"} | Connection: ${connectionType}<br>
                                 Configuration:
                                 <ul>
                                     <li>Threshold: ${sensor.threshold || "N/A"}</li>
@@ -194,19 +220,19 @@
             let debounceTimeout;
 
             sensorFilter.addEventListener("change", () => {
-                loadSensors(auth.currentUser?.uid, displayToggle.value, sensorFilter.value, searchSensorInput.value);
+                loadSensors(auth.currentUser?.email, displayToggle.value, sensorFilter.value, searchSensorInput.value);
             });
 
             searchSensorInput.addEventListener("input", () => {
                 clearTimeout(debounceTimeout);
                 debounceTimeout = setTimeout(() => {
-                    loadSensors(auth.currentUser?.uid, displayToggle.value, sensorFilter.value, searchSensorInput.value);
+                    loadSensors(auth.currentUser?.email, displayToggle.value, sensorFilter.value, searchSensorInput.value);
                 }, 300);
             });
 
             displayToggle.addEventListener("change", () => {
-                loadCameras(auth.currentUser?.uid, displayToggle.value);
-                loadSensors(auth.currentUser?.uid, displayToggle.value, sensorFilter.value, searchSensorInput.value);
+                loadCameras(auth.currentUser?.email, displayToggle.value);
+                loadSensors(auth.currentUser?.email, displayToggle.value, sensorFilter.value, searchSensorInput.value);
             });
         }
 
@@ -225,15 +251,15 @@
                         window.location.href = 'payment.htm';
                     } else {
                         // Load data once user is authenticated
-                        loadCameras(user.uid, "both");
-                        loadSensors(user.uid, "both");
+                        loadCameras(user.email, "both");
+                        loadSensors(user.email, "both");
                         setupEventListeners();
                     }
                 } catch (error) {
                     console.error("Error checking trial status:", error);
                 }
             } else {
-                window.location.href = 'login.htm';
+                window.location.href = 'loginPage.html';
             }
         });
     </script>
