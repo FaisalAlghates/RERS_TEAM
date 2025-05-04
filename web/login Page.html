@@ -128,7 +128,7 @@
         <input type="password" id="password" placeholder="Password" required>
         <button class="login-button" id="loginButton">Login</button>
         <p class="loading" id="loading">Logging in...</p>
-        <div class="signup-link">Don't have an account? <a href="signup%20Page.htm">Sign up</a></div>
+        <div class="signup-link">Don't have an account? <a href="signup%20Page.html">Sign up</a></div>
     </div>
     
     <script type="module">
@@ -172,7 +172,7 @@
                 await signInWithEmailAndPassword(auth, email, password);
                 alert("✅ Login successful!");
                 // Removed history.pushState to avoid errors in file:// protocol
-                window.location.href = "dashboard.htm";
+                window.location.href = "dashboard.html";
             } catch (error) {
                 let errorMessage = "Login failed. Please try again.";
                 if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
