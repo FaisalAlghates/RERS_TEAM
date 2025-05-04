@@ -351,7 +351,7 @@
             </div>
 
             <div class="button-group">
-                <button onclick="window.location.href='add_building.htm'">Previous</button>
+                <button onclick="window.location.href='add_building.html'">Previous</button>
                 <button onclick="addSensor()">Add Sensor</button>
                 <button onclick="window.location.href='add_camera.html'">Next</button>
             </div>
@@ -547,7 +547,7 @@
         // Call populateBuildingData when the page loads
         onAuthStateChanged(auth, (user) => {
             if (!user) {
-                window.location.href = '../web/loginPage.html';
+                window.location.href = '../web/login Page.html';
             } else {
                 populateBuildingData();
             }
