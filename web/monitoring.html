@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -74,8 +73,13 @@
             notifiedSensors.add(sensorId);
         }
 
-        function loadCameras(isPrimary = true, userId) {
-            const container = isPrimary ? document.getElementById("primaryCameraGrid") : document.getElementById("secondaryCameraGrid");
+        function loadCameras(userId, displayMode) {
+            const container = document.getElementById("cameraGrid");
+            if (displayMode === "sensors") {
+                container.style.display = "none";
+                return;
+            }
+            container.style.display = "grid";
             container.innerHTML = '<p class="loading">Loading Cameras...</p>';
 
             const q = query(collection(db, "buildings"), where("userId", "==", userId));
@@ -87,8 +91,8 @@
                     const building = doc.data();
                     if (building.cameras && Array.isArray(building.cameras)) {
                         building.cameras.forEach((camera) => {
-                            if (camera.isPrimary === isPrimary && isValidURL(camera.url)) {
-                                if (isPrimary && cameraCount >= 6) return;
+                            if (isValidURL(camera.url)) {
+                                if (cameraCount >= 6) return;
                                 const embedUrl = convertToEmbedUrl(camera.url);
                                 camerasHTML += `
                                     <div class="camera-feed">
@@ -102,6 +106,16 @@
                     }
                 });
 
+                // Pad with empty camera fields if less than 6
+                while (cameraCount < 6) {
+                    camerasHTML += `
+                        <div class="camera-feed">
+                            <h4>Camera ${cameraCount + 1}</h4>
+                            <div class="placeholder">No Camera Assigned</div>
+                        </div>`;
+                    cameraCount++;
+                }
+
                 container.innerHTML = camerasHTML || "<p>No cameras available</p>";
             }, (error) => {
                 console.error("Error loading cameras:", error);
@@ -109,8 +123,13 @@
             });
         }
 
-        function loadSensors(isPrimary = true, filter = "all", searchQuery = "", userId) {
-            const container = isPrimary ? document.getElementById("primarySensorList") : document.getElementById("secondarySensorList");
+        function loadSensors(userId, displayMode, filter = "all", searchQuery = "") {
+            const container = document.getElementById("sensorList");
+            if (displayMode === "cameras") {
+                container.style.display = "none";
+                return;
+            }
+            container.style.display = "flex";
             container.innerHTML = '<p class="loading">Loading Sensors...</p>';
 
             const q = query(collection(db, "buildings"), where("userId", "==", userId));
@@ -122,37 +141,44 @@
                     const building = doc.data();
                     let sensorsArray = Array.isArray(building.sensors) ? building.sensors : Object.values(building.sensors || {});
                     sensorsArray.forEach((sensor) => {
-                        const isPrimarySensor = sensor.isPrimary !== undefined ? sensor.isPrimary : sensor.primarySensor;
-                        if (isPrimarySensor === isPrimary) {
-                            if (isPrimary && sensorCount >= 20) return;
-                            if (filter !== "all" && sensor.status !== filter) return;
-                            const searchString = `${sensor.type} ${sensor.location} ${sensor.riskLevel}`.toLowerCase();
-                            if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
+                        if (sensorCount >= 10) return;
+                        if (filter !== "all" && sensor.status !== filter) return;
+                        const searchString = `${sensor.type} ${sensor.location} ${sensor.riskLevel}`.toLowerCase();
+                        if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
 
-                            const riskLevel = sensor.riskLevel || "Unknown";
-                            const state = riskLevel >= 3 ? "Danger" : "Normal";
-                            sensorsHTML += `
-                                <div class="sensor-item ${sensor.status || "unknown"} ${state.toLowerCase()}">
-                                    <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location || building.location || "Unknown"}<br>
-                                    Building: ${sensor.buildingName || "N/A"} | Floor: ${sensor.floor || "N/A"} | Zone: ${sensor.zone || "N/A"}<br>
-                                    Status: ${sensor.status || "unknown"} | State: ${state} | Risk Level: ${riskLevel}<br>
-                                    Activated: ${sensor.activated ? "Yes" : "No"} | Connection: ${sensor.connectionType || "N/A"}<br>
-                                    Configuration:
-                                    <ul>
-                                        <li>Threshold: ${sensor.threshold || "N/A"}</li>
-                                        <li>Last Reading: ${sensor.lastReading || "N/A"}</li>
-                                        <li>Unique ID: ${sensor.uniqueId || "N/A"}</li>
-                                    </ul>
-                                </div>`;
-                            sensorCount++;
+                        const riskLevel = sensor.riskLevel || "Unknown";
+                        const state = riskLevel >= 3 ? "Danger" : "Normal";
+                        sensorsHTML += `
+                            <div class="sensor-item ${sensor.status || "unknown"} ${state.toLowerCase()}">
+                                <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location || building.location || "Unknown"}<br>
+                                Building: ${sensor.buildingName || "N/A"} | Floor: ${sensor.floor || "N/A"} | Zone: ${sensor.zone || "N/A"}<br>
+                                Status: ${sensor.status || "unknown"} | State: ${state} | Risk Level: ${riskLevel}<br>
+                                Activated: ${sensor.activated ? "Yes" : "No"} | Connection: ${sensor.connectionType || "N/A"}<br>
+                                Configuration:
+                                <ul>
+                                    <li>Threshold: ${sensor.threshold || "N/A"}</li>
+                                    <li>Last Reading: ${sensor.lastReading || "N/A"}</li>
+                                    <li>Unique ID: ${sensor.uniqueId || "N/A"}</li>
+                                </ul>
+                            </div>`;
+                        sensorCount++;
 
-                            // Check if sensor is activated and notify the party
-                            if (sensor.activated === true) {
-                                notifyParty(sensor, building);
-                            }
+                        // Check if sensor is activated and notify the party
+                        if (sensor.activated === true) {
+                            notifyParty(sensor, building);
                         }
                     });
                 });
+
+                // Pad with empty sensor fields if less than 10
+                while (sensorCount < 10) {
+                    sensorsHTML += `
+                        <div class="sensor-item unknown">
+                            <strong>Sensor ${sensorCount + 1}</strong><br>
+                            <p>No Sensor Assigned</p>
+                        </div>`;
+                    sensorCount++;
+                }
 
                 container.innerHTML = sensorsHTML || "<p>No sensors available</p>";
             }, (error) => {
@@ -161,38 +187,26 @@
             });
         }
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(tab).classList.add('active');
-            document.getElementById(tab + 'Content').classList.add('active');
-
-            const userId = auth.currentUser?.uid;
-            if (tab === 'primaryTab') {
-                loadCameras(true, userId);
-                loadSensors(true, "all", "", userId);
-            } else {
-                loadCameras(false, userId);
-                loadSensors(false, "all", "", userId);
-            }
-        }
-
         function setupEventListeners() {
-            ['primary', 'secondary'].forEach(type => {
-                const sensorFilter = document.getElementById(`${type}SensorFilter`);
-                const searchSensorInput = document.getElementById(`${type}SearchSensorInput`);
-                let debounceTimeout;
+            const sensorFilter = document.getElementById("sensorFilter");
+            const searchSensorInput = document.getElementById("searchSensorInput");
+            const displayToggle = document.getElementById("displayToggle");
+            let debounceTimeout;
 
-                sensorFilter.addEventListener("change", () => {
-                    loadSensors(type === 'primary', sensorFilter.value, searchSensorInput.value, auth.currentUser?.uid);
-                });
+            sensorFilter.addEventListener("change", () => {
+                loadSensors(auth.currentUser?.uid, displayToggle.value, sensorFilter.value, searchSensorInput.value);
+            });
 
-                searchSensorInput.addEventListener("input", () => {
-                    clearTimeout(debounceTimeout);
-                    debounceTimeout = setTimeout(() => {
-                        loadSensors(type === 'primary', sensorFilter.value, searchSensorInput.value, auth.currentUser?.uid);
-                    }, 300);
-                });
+            searchSensorInput.addEventListener("input", () => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    loadSensors(auth.currentUser?.uid, displayToggle.value, sensorFilter.value, searchSensorInput.value);
+                }, 300);
+            });
+
+            displayToggle.addEventListener("change", () => {
+                loadCameras(auth.currentUser?.uid, displayToggle.value);
+                loadSensors(auth.currentUser?.uid, displayToggle.value, sensorFilter.value, searchSensorInput.value);
             });
         }
 
@@ -211,7 +225,8 @@
                         window.location.href = 'payment.htm';
                     } else {
                         // Load data once user is authenticated
-                        switchTab('primaryTab');
+                        loadCameras(user.uid, "both");
+                        loadSensors(user.uid, "both");
                         setupEventListeners();
                     }
                 } catch (error) {
@@ -222,7 +237,6 @@
             }
         });
     </script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
@@ -303,39 +317,6 @@
             margin-bottom: 20px;
         }
 
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .tab {
-            padding: 10px 20px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 700;
-            transition: all 0.3s ease;
-        }
-
-        .tab:hover {
-            background: rgba(255, 0, 0, 0.4);
-        }
-
-        .tab.active {
-            background: var(--primary-color);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         .camera-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -358,6 +339,15 @@
         .camera-feed iframe {
             border-radius: 8px;
             width: 100%;
+            height: 200px;
+        }
+
+        .camera-feed .placeholder {
+            background: #333;
+            color: #fff;
+            text-align: center;
+            padding: 80px 0;
+            border-radius: 8px;
             height: 200px;
         }
 
@@ -489,7 +479,6 @@
         }
     </style>
 </head>
-
 <body>
     <aside class="sidebar">
         <nav>
@@ -508,46 +497,28 @@
     <div class="content">
         <div class="monitor-container">
             <h2>Monitoring Dashboard</h2>
-            <div class="tabs">
-                <div class="tab active" id="primaryTab" onclick="switchTab('primaryTab')">Primary Monitoring</div>
-                <div class="tab" id="secondaryTab" onclick="switchTab('secondaryTab')">Secondary Monitoring</div>
+            <div class="sensor-controls">
+                <label for="displayToggle">Display:</label>
+                <select id="displayToggle">
+                    <option value="both">Cameras & Sensors</option>
+                    <option value="cameras">Cameras Only</option>
+                    <option value="sensors">Sensors Only</option>
+                </select>
+                <label for="sensorFilter">Filter:</label>
+                <select id="sensorFilter">
+                    <option value="all">All Sensors</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+                <label for="searchSensorInput">Search:</label>
+                <input type="text" id="searchSensorInput" placeholder="Search sensors..." />
             </div>
-
-            <div class="tab-content active" id="primaryTabContent">
-                <h3>Primary Cameras (Max 6)</h3>
-                <div class="camera-grid" id="primaryCameraGrid"></div>
-                <h3>Primary Sensors (Max 20)</h3>
-                <div class="sensor-controls">
-                    <label for="primarySensorFilter">Filter:</label>
-                    <select id="primarySensorFilter">
-                        <option value="all">All Sensors</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                    <label for="primarySearchSensorInput">Search:</label>
-                    <input type="text" id="primarySearchSensorInput" placeholder="Search sensors..." />
-                </div>
-                <div class="sensor-list" id="primarySensorList"></div>
-            </div>
-
-            <div class="tab-content" id="secondaryTabContent">
-                <h3>Secondary Cameras</h3>
-                <div class="camera-grid" id="secondaryCameraGrid"></div>
-                <h3>Secondary Sensors</h3>
-                <div class="sensor-controls">
-                    <label for="secondarySensorFilter">Filter:</label>
-                    <select id="secondarySensorFilter">
-                        <option value="all">All Sensors</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                    <label for="secondarySearchSensorInput">Search:</label>
-                    <input type="text" id="secondarySearchSensorInput" placeholder="Search sensors..." />
-                </div>
-                <div class="sensor-list" id="secondarySensorList"></div>
-            </div>
+            <h3>Cameras (6)</h3>
+            <div class="camera-grid" id="cameraGrid"></div>
+            <h3>Sensors (10)</h3>
+            <div class="sensor-list" id="sensorList"></div>
         </div>
     </div>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a8623809de53d4',t:'MTc0NjM2NTc1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
-
 </html>
