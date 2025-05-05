@@ -8,7 +8,7 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -81,6 +81,7 @@
 
         function loadCameras(userEmail, displayMode) {
             const container = document.getElementById("cameraGrid");
+            const cameraHeader = document.getElementById("cameraHeader");
             if (displayMode === "sensors") {
                 container.style.display = "none";
                 return;
@@ -123,6 +124,9 @@
                     }
                 });
 
+                // Update camera header with count
+                cameraHeader.textContent = `Cameras (${displayMode === "cameras" ? cameraCount : 6})`;
+
                 // Pad with empty camera fields if less than 6
                 if (displayMode !== "cameras") {
                     while (cameraCount < 6) {
@@ -144,6 +148,7 @@
 
         function loadSensors(userEmail, displayMode, filter = "all", searchQuery = "") {
             const container = document.getElementById("sensorList");
+            const sensorHeader = document.getElementById("sensorHeader");
             if (displayMode === "cameras") {
                 container.style.display = "none";
                 return;
@@ -177,18 +182,30 @@
                         // Get connection type
                         const connectionType = sensor.connections ? Object.keys(sensor.connections)[0] || "N/A" : "N/A";
 
+                        const isActive = sensor.status === "active";
+                        const statusColor = isActive ? "green" : "red";
+                        const toggleChecked = isActive ? "checked" : "";
+
                         sensorsHTML += `
-                            <div class="sensor-item ${sensor.status || "unknown"} ${state.toLowerCase()}">
-                                <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location || building.location || "Unknown"}<br>
-                                Building: ${sensor.buildingName || building.buildingName || "N/A"} | Floor: ${sensor.floor || "N/A"} | Zone: ${sensor.zone || "N/A"}<br>
-                                Status: ${sensor.status || "unknown"} | State: ${state} | Risk Levels: ${riskLevelsText}<br>
-                                Activated: ${sensor.activated ? "Yes" : "No"} | Connection: ${connectionType}<br>
-                                Configuration:
-                                <ul>
-                                    <li>Threshold: ${sensor.threshold || "N/A"}</li>
-                                    <li>Last Reading: ${sensor.lastReading || "N/A"}</li>
-                                    <li>Unique ID: ${sensor.uniqueId || "N/A"}</li>
-                                </ul>
+                            <div class="sensor-item ${sensor.status || "unknown"} ${state.toLowerCase()}" style="background: rgba(${isActive ? '0, 255, 0, 0.1' : '255, 0, 0, 0.15'}); border-left: 4px solid ${statusColor};">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div>
+                                        <strong>${sensor.type} Sensor</strong> - Location: ${sensor.location || building.location || "Unknown"}<br>
+                                        Building: ${sensor.buildingName || building.buildingName || "N/A"} | Floor: ${sensor.floor || "N/A"} | Zone: ${sensor.zone || "N/A"}<br>
+                                        Status: ${sensor.status || "unknown"} | State: ${state} | Risk Levels: ${riskLevelsText}<br>
+                                        Activated: ${sensor.activated ? "Yes" : "No"} | Connection: ${connectionType}<br>
+                                        Configuration:
+                                        <ul>
+                                            <li>Threshold: ${sensor.threshold || "N/A"}</li>
+                                            <li>Last Reading: ${sensor.lastReading || "N/A"}</li>
+                                            <li>Unique ID: ${sensor.uniqueId || "N/A"}</li>
+                                        </ul>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" class="status-toggle" data-unique-id="${sensor.uniqueId}" ${toggleChecked}>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
                             </div>`;
                         sensorCount++;
 
@@ -198,6 +215,9 @@
                         }
                     });
                 });
+
+                // Update sensor header with count
+                sensorHeader.textContent = `Sensors (${displayMode === "sensors" ? sensorCount : 10})`;
 
                 // Pad with empty sensor fields if less than 10
                 if (displayMode !== "sensors") {
@@ -212,6 +232,34 @@
                 }
 
                 container.innerHTML = sensorsHTML || "<p>No sensors available</p>";
+
+                // Add event listeners to toggle switches
+                document.querySelectorAll('.status-toggle').forEach(toggle => {
+                    toggle.addEventListener('change', async function () {
+                        const uniqueId = this.getAttribute('data-unique-id');
+                        const newStatus = this.checked ? "active" : "inactive";
+                        const newColor = this.checked ? "green" : "red";
+                        const sensorItem = this.closest('.sensor-item');
+
+                        // Update UI immediately
+                        sensorItem.style.background = `rgba(${this.checked ? '0, 255, 0, 0.1' : '255, 0, 0, 0.15'})`;
+                        sensorItem.style.borderLeft = `4px solid ${newColor}`;
+
+                        // Find and update the sensor in Firebase
+                        snapshot.forEach(async (docSnap) => {
+                            const building = docSnap.data();
+                            const sensorsArray = Array.isArray(building.sensors) ? building.sensors : Object.values(building.sensors || {});
+                            const sensorToUpdate = sensorsArray.find(sensor => sensor.uniqueId === uniqueId);
+                            if (sensorToUpdate) {
+                                sensorToUpdate.status = newStatus;
+                                const buildingRef = doc(db, "buildings", docSnap.id);
+                                await updateDoc(buildingRef, {
+                                    sensors: sensorsArray
+                                });
+                            }
+                        });
+                    });
+                });
             }, (error) => {
                 console.error("Error loading sensors:", error);
                 container.innerHTML = `<p>Error loading sensors: ${error.message}</p>`;
@@ -326,9 +374,9 @@
         }
 
         .content {
-            margin-left: 270px;
+            margin-left: 300px;
             padding: 30px;
-            width: calc(100% - 270px);
+            width: calc(100% - 300px);
             overflow-y: auto;
         }
 
@@ -480,6 +528,57 @@
             }
         }
 
+        /* Toggle Switch Styles */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            margin-left: 10px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #00ff00;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        input:not(:checked)+.slider {
+            background-color: #ff0000;
+        }
+
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -545,9 +644,9 @@
                 <label for="searchSensorInput">Search:</label>
                 <input type="text" id="searchSensorInput" placeholder="Search sensors..." />
             </div>
-            <h3>Cameras (6)</h3>
+            <h3 id="cameraHeader">Cameras (6)</h3>
             <div class="camera-grid" id="cameraGrid"></div>
-            <h3>Sensors (10)</h3>
+            <h3 id="sensorHeader">Sensors (10)</h3>
             <div class="sensor-list" id="sensorList"></div>
         </div>
     </div>
