@@ -160,7 +160,7 @@
                     const building = doc.data();
                     let sensorsArray = Array.isArray(building.sensors) ? building.sensors : Object.values(building.sensors || {});
                     sensorsArray.forEach((sensor) => {
-                        if (sensorCount >= 10) return;
+                        if (displayMode !== "sensors" && sensorCount >= 10) return;
                         if (filter !== "all" && sensor.status !== filter) return;
                         const searchString = `${sensor.type} ${sensor.location || ''} ${sensor.riskLevels?.map(r => r.level).join(' ') || ''}`.toLowerCase();
                         if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
@@ -200,13 +200,15 @@
                 });
 
                 // Pad with empty sensor fields if less than 10
-                while (sensorCount < 10) {
-                    sensorsHTML += `
-                        <div class="sensor-item unknown">
-                            <strong>Sensor ${sensorCount + 1}</strong><br>
-                            <p>No Sensor Assigned</p>
-                        </div>`;
-                    sensorCount++;
+                if (displayMode !== "sensors") {
+                    while (sensorCount < 10) {
+                        sensorsHTML += `
+                            <div class="sensor-item unknown">
+                                <strong>Sensor ${sensorCount + 1}</strong><br>
+                                <p>No Sensor Assigned</p>
+                            </div>`;
+                        sensorCount++;
+                    }
                 }
 
                 container.innerHTML = sensorsHTML || "<p>No sensors available</p>";
