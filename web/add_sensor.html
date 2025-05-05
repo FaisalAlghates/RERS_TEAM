@@ -282,11 +282,14 @@
                 <input type="checkbox" id="hasGps" class="primary-checkbox">
                 <label for="hasGps">Built-in GPS in Sensor</label>
             </div>
+            <div class="input-group hidden" id="hasGpsFields">
+                <select id="gpsBuildingName"></select>
+                <select id="gpsFloorNumber"></select>
+            </div>
             <div class="checkbox-wrapper">
                 <input type="checkbox" id="noGps" class="primary-checkbox">
                 <label for="noGps">Does not have built-in GPS</label>
             </div>
-
             <div class="input-group hidden" id="noGpsFields">
                 <input type="text" id="sensorLocation" placeholder="Sensor Location">
                 <select id="buildingName"></select>
@@ -378,6 +381,7 @@
 
         const hasGps = document.getElementById('hasGps');
         const noGps = document.getElementById('noGps');
+        const hasGpsFields = document.getElementById('hasGpsFields');
         const noGpsFields = document.getElementById('noGpsFields');
 
         // Connection type toggles
@@ -407,6 +411,9 @@
             if (this.checked) {
                 noGps.checked = false;
                 noGpsFields.classList.add('hidden');
+                hasGpsFields.classList.remove('hidden');
+            } else {
+                hasGpsFields.classList.add('hidden');
             }
         });
 
@@ -414,6 +421,7 @@
             if (this.checked) {
                 hasGps.checked = false;
                 noGpsFields.classList.remove('hidden');
+                hasGpsFields.classList.add('hidden');
             } else {
                 noGpsFields.classList.add('hidden');
             }
@@ -429,7 +437,10 @@
 
                 const buildingSelect = document.getElementById('buildingName');
                 const floorSelect = document.getElementById('floorNumber');
+                const gpsBuildingSelect = document.getElementById('gpsBuildingName');
+                const gpsFloorSelect = document.getElementById('gpsFloorNumber');
                 buildingSelect.innerHTML = '<option value="">Select a Building</option>';
+                gpsBuildingSelect.innerHTML = '<option value="">Select a Building</option>';
 
                 const q = query(collection(db, "buildings"), where("addedBy", "==", user.email));
                 const querySnapshot = await getDocs(q);
@@ -439,9 +450,10 @@
                     option.value = doc.id;
                     option.text = data.buildingName;
                     buildingSelect.appendChild(option);
+                    gpsBuildingSelect.appendChild(option.cloneNode(true));
                 });
 
-                // Populate floors dynamically when a building is selected
+                // Populate floors dynamically when a building is selected (noGps)
                 buildingSelect.addEventListener('change', async function () {
                     const selectedBuildingId = this.value;
                     floorSelect.innerHTML = '<option value="">Select a Floor</option>';
@@ -452,6 +464,22 @@
                             const data = buildingSnap.data();
                             for (let i = 1; i <= parseInt(data.floors); i++) {
                                 floorSelect.innerHTML += `<option value="${i}">Floor ${i}</option>`;
+                            }
+                        }
+                    }
+                });
+
+                // Populate floors dynamically when a building is selected (hasGps)
+                gpsBuildingSelect.addEventListener('change', async function () {
+                    const selectedBuildingId = this.value;
+                    gpsFloorSelect.innerHTML = '<option value="">Select a Floor</option>';
+                    if (selectedBuildingId) {
+                        const buildingRef = doc(db, "buildings", selectedBuildingId);
+                        const buildingSnap = await getDoc(buildingRef);
+                        if (buildingSnap.exists()) {
+                            const data = buildingSnap.data();
+                            for (let i = 1; i <= parseInt(data.floors); i++) {
+                                gpsFloorSelect.innerHTML += `<option value="${i}">Floor ${i}</option>`;
                             }
                         }
                     }
@@ -470,7 +498,12 @@
                     return;
                 }
 
-                const buildingId = document.getElementById("buildingName").value;
+                let buildingId;
+                if (hasGps.checked) {
+                    buildingId = document.getElementById("gpsBuildingName").value;
+                } else if (noGps.checked) {
+                    buildingId = document.getElementById("buildingName").value;
+                }
                 if (!buildingId) {
                     alert("No building selected. Please select a building.");
                     return;
@@ -524,6 +557,8 @@
 
                     if (hasGps.checked) {
                         sensorData.hasGps = true;
+                        sensorData.buildingName = buildingData.buildingName;
+                        sensorData.floor = document.getElementById("gpsFloorNumber").value;
                     } else if (noGps.checked) {
                         sensorData.hasGps = false;
                         sensorData.location = document.getElementById("sensorLocation").value.trim();
@@ -593,6 +628,4 @@
             }
         })();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a903a1ee4cbfa9',t:'MTc0NjM3MjM2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-
-</html>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d } } })
