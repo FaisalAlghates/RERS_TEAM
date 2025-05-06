@@ -8,7 +8,7 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, query, where, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
@@ -24,11 +24,12 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const rtdb = getDatabase(app);
         const auth = getAuth(app);
         const realtimeDb = getDatabase(app);
 
-        // Track notified sensors to avoid duplicate notifications
         const notifiedSensors = new Set();
+        let heatSensorData = null;
 
         function convertToEmbedUrl(url) {
             if (!url) return null;
@@ -208,6 +209,7 @@
             });
         }
 
+<<<<<<< Updated upstream
         function updateSensorStatusUI(uniqueId, lastReading, status) {
             const sensorItems = document.querySelectorAll('.sensor-item');
             sensorItems.forEach(item => {
@@ -228,6 +230,27 @@
                     }
                 }
             });
+=======
+        function logExceedanceEvent(sensor, building, tempValue, userEmail) {
+            const reportData = {
+                type: "daily",
+                details: `Temperature Exceedance: ${tempValue}°C detected by ${sensor.type} sensor at ${sensor.location || building.location || "Unknown"} (Building: ${sensor.buildingName || building.buildingName || "N/A"})`,
+                sensorInfo: {
+                    type: sensor.type,
+                    location: sensor.location || building.location || "Unknown",
+                    buildingName: sensor.buildingName || building.buildingName || "N/A",
+                    floor: sensor.floor || "N/A",
+                    uniqueId: sensor.uniqueId || "N/A",
+                    temperature: tempValue,
+                    addedBy: userEmail // Add this to match Firestore rules
+                },
+                timestamp: new Date().toISOString()
+            };
+
+            addDoc(collection(db, "reports"), reportData)
+                .then(() => console.log("Exceedance event logged"))
+                .catch(error => console.error("Error logging exceedance event:", error));
+>>>>>>> Stashed changes
         }
 
         function loadSensors(userEmail, displayMode, filter = "all", searchQuery = "") {
@@ -254,6 +277,13 @@
                         const searchString = `${sensor.type} ${sensor.location || ''} ${sensor.riskLevels?.map(r => r.level).join(' ') || ''}`.toLowerCase();
                         if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
 
+<<<<<<< Updated upstream
+=======
+                        if (sensor.source === "house/temp") {
+                            heatSensorData = { sensor, building, docId: doc.id };
+                        }
+
+>>>>>>> Stashed changes
                         const highestRiskLevel = sensor.riskLevels && sensor.riskLevels.length > 0
                             ? Math.max(...sensor.riskLevels.map(r => r.level))
                             : 1;
@@ -277,8 +307,8 @@
                                         Activated: ${sensor.activated ? "Yes" : "No"} | Connection: ${connectionType}<br>
                                         Configuration:
                                         <ul>
-                                            <li>Threshold: ${sensor.threshold || "N/A"}</li>
-                                            <li>Last Reading: ${sensor.lastReading || "N/A"}</li>
+                                            <li>Threshold: ${sensor.riskLevels?.find(r => r.threshold)?.threshold || "N/A"}°C</li>
+                                            <li>Last Reading: <span id="lastReading-${sensor.uniqueId}">${sensor.lastReading || "N/A"}</span></li>
                                             <li>Unique ID: ${sensor.uniqueId || "N/A"}</li>
                                         </ul>
                                     </div>
@@ -335,6 +365,27 @@
                         });
                     });
                 });
+
+                if (heatSensorData) {
+                    const tempRef = ref(rtdb, "house/temp");
+                    onValue(tempRef, (snapshot) => {
+                        const tempValue = snapshot.val();
+                        const lastReadingElement = document.getElementById(`lastReading-${heatSensorData.sensor.uniqueId}`);
+                        if (lastReadingElement) {
+                            lastReadingElement.textContent = `${tempValue}°C`;
+                        }
+
+                        const highestThreshold = heatSensorData.sensor.riskLevels
+                            .filter(r => r.threshold)
+                            .sort((a, b) => b.threshold - a.threshold)[0]?.threshold;
+
+                        if (highestThreshold && tempValue > highestThreshold) {
+                            const alertMessage = `Temperature Exceedance Alert!\nSensor: ${heatSensorData.sensor.type}\nLocation: ${heatSensorData.sensor.location || heatSensorData.building.location || "Unknown"}\nBuilding: ${heatSensorData.sensor.buildingName || heatSensorData.building.buildingName || "N/A"}\nTemperature: ${tempValue}°C\nThreshold: ${highestThreshold}°C`;
+                            alert(alertMessage);
+                            logExceedanceEvent(heatSensorData.sensor, heatSensorData.building, tempValue, auth.currentUser.email);
+                        }
+                    });
+                }
             }, (error) => {
                 console.error("Error loading sensors:", error);
                 container.innerHTML = `<p>Error loading sensors: ${error.message}</p>`;
