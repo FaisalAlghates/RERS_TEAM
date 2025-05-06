@@ -8,7 +8,7 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -45,18 +45,27 @@
                     return;
                 }
 
-                const buildingData = {
-                    buildingName,
-                    location,
-                    floors: parseInt(floors),
-                    domainNumber,
-                    addedBy: user.email,
-                    sensors: [],
-                    cameras: [],
-                    timestamp: new Date().toISOString()
-                };
-
                 try {
+                    // Check if domainNumber already exists
+                    const q = query(collection(db, "buildings"), where("domainNumber", "==", domainNumber));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        alert("Domain Number already exists! Please choose a unique Domain Number.");
+                        return;
+                    }
+
+                    const buildingData = {
+                        buildingName,
+                        location,
+                        floors: parseInt(floors),
+                        domainNumber,
+                        addedBy: user.email,
+                        sensors: [],
+                        cameras: [],
+                        timestamp: new Date().toISOString()
+                    };
+
                     await addDoc(collection(db, "buildings"), buildingData);
                     alert("Building added successfully!");
                     window.location.href = 'add_sensor.html';
@@ -253,6 +262,6 @@
             </div>
         </div>
     </div>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a903a27cbcb042',t:'MTc0NjM3MjM2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 
 </html>

@@ -334,6 +334,7 @@
                 </div>
                 <div class="risk-description" id="descLow">
                     <input type="text" placeholder="Enter description for Low Risk">
+                    <input type="number" id="thresholdLow" placeholder="Temperature Threshold (°C)" min="0">
                 </div>
 
                 <div class="risk-level medium">
@@ -342,6 +343,7 @@
                 </div>
                 <div class="risk-description" id="descMedium">
                     <input type="text" placeholder="Enter description for Medium Risk">
+                    <input type="number" id="thresholdMedium" placeholder="Temperature Threshold (°C)" min="0">
                 </div>
 
                 <div class="risk-level high">
@@ -350,6 +352,7 @@
                 </div>
                 <div class="risk-description" id="descHigh">
                     <input type="text" placeholder="Enter description for High Risk">
+                    <input type="number" id="thresholdHigh" placeholder="Temperature Threshold (°C)" min="0">
                 </div>
             </div>
 
@@ -453,7 +456,6 @@
                     gpsBuildingSelect.appendChild(option.cloneNode(true));
                 });
 
-                // Populate floors dynamically when a building is selected (noGps)
                 buildingSelect.addEventListener('change', async function () {
                     const selectedBuildingId = this.value;
                     floorSelect.innerHTML = '<option value="">Select a Floor</option>';
@@ -469,7 +471,6 @@
                     }
                 });
 
-                // Populate floors dynamically when a building is selected (hasGps)
                 gpsBuildingSelect.addEventListener('change', async function () {
                     const selectedBuildingId = this.value;
                     gpsFloorSelect.innerHTML = '<option value="">Select a Floor</option>';
@@ -515,12 +516,16 @@
                     alert("Please select at least one risk level!");
                     return;
                 }
-                const riskLevels = Array.from(selectedRisks).map(risk => ({
-                    level: parseInt(risk.value),
-                    description: document.getElementById(`desc${risk.id.replace('risk', '')}`).querySelector('input').value
-                }));
+                const riskLevels = Array.from(selectedRisks).map(risk => {
+                    const levelId = risk.id.replace('risk', '');
+                    const thresholdInput = document.getElementById(`threshold${levelId}`);
+                    return {
+                        level: parseInt(risk.value),
+                        description: document.getElementById(`desc${levelId}`).querySelector('input[type="text"]').value,
+                        threshold: thresholdInput && sensorType === "Temperature" ? parseFloat(thresholdInput.value) : null
+                    };
+                });
 
-                // Get connection details
                 const connections = {};
                 connectionRadios.forEach(radio => {
                     if (radio.checked) {
@@ -552,7 +557,8 @@
                         status: "inactive",
                         uniqueId: `${buildingId}-${sensorType}-${Date.now()}`,
                         addedBy: user.email,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        source: sensorType === "Temperature" ? "house/temp" : null // Link to Realtime Database
                     };
 
                     if (hasGps.checked) {
@@ -579,10 +585,9 @@
             });
         };
 
-        // Call populateBuildingData when the page loads
         onAuthStateChanged(auth, (user) => {
             if (!user) {
-                window.location.href = '../web/login Page.html';
+                window.location.href = '../web/loginPage.html';
             } else {
                 populateBuildingData();
             }
@@ -596,7 +601,7 @@
                 const b = a.contentDocument || a.contentWindow.document;
                 if (b) {
                     const d = b.createElement('script');
-                    d.innerHTML = "window.__CF$cv$params={r:'938927fb7ab2b0b1',t:'MTc0NjAzODMwNy4wMDAwMDA='};var|var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+                    d.innerHTML = "window.__CF$cv$params={r:'938927fb7ab2b0b1',t:'MTc0NjAzODMwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
                     b.getElementsByTagName('head')[0].appendChild(d);
                 }
             }
@@ -628,4 +633,6 @@
             }
         })();
     </script>
-    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d } } })
+</body>
+
+</html>

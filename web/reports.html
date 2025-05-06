@@ -6,6 +6,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reports | RERS System</title>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
+            authDomain: "rersweb.firebaseapp.com",
+            projectId: "rersweb",
+            storageBucket: "rersweb.firebasestorage.app",
+            messagingSenderId: "432558250053",
+            appId: "1:432558250053:web:07fc91665244a2d93feb2c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const staticReports = [
+            { type: "daily", details: "Daily maintenance completed for security systems." },
+            { type: "weekly", details: "Weekly status check on emergency alerts." },
+            { type: "monthly", details: "Monthly incident report generated." },
+            { type: "yearly", details: "Yearly system audit completed successfully." }
+        ];
+
+        function filterReports() {
+            const reportType = document.getElementById("reportType").value;
+            const reportList = document.getElementById("reportList");
+
+            reportList.innerHTML = "";
+
+            staticReports.forEach(report => {
+                if (report.type === reportType || reportType === "all") {
+                    const item = document.createElement("div");
+                    item.className = "report-item";
+                    item.innerHTML = `<strong>${report.type.toUpperCase()} REPORT</strong><br>${report.details}`;
+                    reportList.appendChild(item);
+                }
+            });
+
+            if (reportType === "daily" || reportType === "all") {
+                const q = query(collection(db, "reports"), where("type", "==", "daily"));
+                onSnapshot(q, (snapshot) => {
+                    snapshot.forEach((doc) => {
+                        const report = doc.data();
+                        const item = document.createElement("div");
+                        item.className = "report-item backlog";
+                        item.innerHTML = `
+                            <strong>BACKLOG: ${report.details}</strong><br>
+                            Sensor: ${report.sensorInfo.type} | Location: ${report.sensorInfo.location} | 
+                            Building: ${report.sensorInfo.buildingName} | Floor: ${report.sensorInfo.floor} | 
+                            Unique ID: ${report.sensorInfo.uniqueId} | 
+                            Temperature: ${report.sensorInfo.temperature}°C<br>
+                            Timestamp: ${new Date(report.timestamp).toLocaleString()}`;
+                        reportList.appendChild(item);
+                    });
+                }, (error) => {
+                    console.error("Error loading backlog reports:", error);
+                });
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'loginPage.html';
+            } else {
+                filterReports(); // Call filterReports on load
+                document.querySelector('.filter-button').addEventListener('click', filterReports); // Bind click event
+            }
+        });
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
@@ -149,6 +220,10 @@
             transition: 0.3s;
         }
 
+        .report-item.backlog {
+            background: rgba(255, 0, 0, 0.2);
+        }
+
         .report-item:hover {
             background: rgba(255, 255, 255, 0.3);
         }
@@ -180,40 +255,14 @@
                     <option value="weekly">Weekly Report</option>
                     <option value="monthly">Monthly Report</option>
                     <option value="yearly">Yearly Report</option>
+                    <option value="all">All Reports</option>
                 </select>
-                <button class="filter-button" onclick="filterReports()">Filter</button>
+                <button class="filter-button">Filter</button>
             </div>
 
             <div class="report-list" id="reportList"></div>
         </div>
     </div>
-
-    <script>
-        const reports = [
-            { type: "daily", details: "Daily maintenance completed for security systems." },
-            { type: "weekly", details: "Weekly status check on emergency alerts." },
-            { type: "monthly", details: "Monthly incident report generated." },
-            { type: "yearly", details: "Yearly system audit completed successfully." }
-        ];
-
-        function filterReports() {
-            const reportType = document.getElementById("reportType").value;
-            const reportList = document.getElementById("reportList");
-
-            reportList.innerHTML = "";
-
-            reports.forEach(report => {
-                if (report.type === reportType || reportType === "all") {
-                    const item = document.createElement("div");
-                    item.className = "report-item";
-                    item.innerHTML = `<strong>${report.type.toUpperCase()} REPORT</strong><br>${report.details}`;
-                    reportList.appendChild(item);
-                }
-            });
-        }
-
-        window.onload = filterReports;
-    </script>
 </body>
 
 </html>
