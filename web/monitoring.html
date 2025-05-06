@@ -18,15 +18,13 @@
             projectId: "rersweb",
             storageBucket: "rersweb.firebasestorage.app",
             messagingSenderId: "432558250053",
-            appId: "1:432558250053:web:07fc91665244a2d93feb2c",
-            databaseURL: "https://rersweb-default-rtdb.firebaseio.com/"
+            appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
         const auth = getAuth(app);
-        const realtimeDb = getDatabase(app);
 
         const notifiedSensors = new Set();
         let heatSensorData = null;
@@ -78,72 +76,6 @@
 
             console.log(`Notifying party via ${notificationMethod} to ${contactEmail}${contactPhone ? ` and ${contactPhone}` : ''}: ${notificationMessage}`);
             notifiedSensors.add(sensorId);
-        }
-
-        function updateHouseDataUI(houseData) {
-            const sensorItems = document.querySelectorAll('.sensor-item');
-            sensorItems.forEach(item => {
-                const sensorType = item.querySelector('strong')?.textContent?.toLowerCase();
-                
-                if (sensorType && sensorType.includes('temperature')) {
-                    const readingElement = item.querySelector('ul li:nth-child(2)');
-                    if (readingElement && houseData.temp !== undefined) {
-                        readingElement.textContent = `Last Reading: ${houseData.temp}°C`;
-                    }
-                }
-                
-                if (sensorType && sensorType.includes('humidity')) {
-                    const readingElement = item.querySelector('ul li:nth-child(2)');
-                    if (readingElement && houseData.humidity !== undefined) {
-                        readingElement.textContent = `Last Reading: ${houseData.humidity}%`;
-                    }
-                }
-                
-                if (sensorType && sensorType.includes('gas')) {
-                    const readingElement = item.querySelector('ul li:nth-child(2)');
-                    if (readingElement && houseData['gas-leak'] !== undefined) {
-                        const status = houseData['gas-leak'] ? 'DETECTED' : 'Normal';
-                        const statusColor = houseData['gas-leak'] ? 'red' : 'green';
-                        readingElement.textContent = `Last Reading: ${status}`;
-                        readingElement.style.color = statusColor;
-                        
-                        if (houseData['gas-leak']) {
-                            item.style.background = 'rgba(255, 0, 0, 0.15)';
-                            item.style.borderLeft = '4px solid red';
-                            const statusText = item.querySelector('div > div > strong').nextSibling;
-                            if (statusText) {
-                                statusText.textContent = statusText.textContent.replace(/Status: \w+/, 'Status: ALERT');
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function listenToRealtimeData(userEmail) {
-            const sensorsRef = ref(realtimeDb, 'sensors');
-            onValue(sensorsRef, (snapshot) => {
-                const sensorData = snapshot.val();
-                if (sensorData) {
-                    Object.entries(sensorData).forEach(([uniqueId, data]) => {
-                        if (data.addedBy === userEmail) {
-                            updateSensorStatusUI(uniqueId, data.lastReading, data.status);
-                        }
-                    });
-                }
-            }, (error) => {
-                console.error("Error listening to sensor status:", error);
-            });
-
-            const houseRef = ref(realtimeDb, 'house');
-            onValue(houseRef, (snapshot) => {
-                const houseData = snapshot.val();
-                if (houseData) {
-                    updateHouseDataUI(houseData);
-                }
-            }, (error) => {
-                console.error("Error listening to house data:", error);
-            });
         }
 
         function loadCameras(userEmail, displayMode) {
@@ -209,28 +141,6 @@
             });
         }
 
-<<<<<<< Updated upstream
-        function updateSensorStatusUI(uniqueId, lastReading, status) {
-            const sensorItems = document.querySelectorAll('.sensor-item');
-            sensorItems.forEach(item => {
-                if (item.querySelector(`input[data-unique-id="${uniqueId}"]`)) {
-                    const statusText = item.querySelector('div > div > strong').nextSibling;
-                    const lastReadingText = item.querySelector('ul li:nth-child(2)');
-                    if (statusText && lastReadingText) {
-                        statusText.textContent = statusText.textContent.replace(/Status: \w+/, `Status: ${status}`);
-                        lastReadingText.textContent = `Last Reading: ${lastReading || "N/A"}`;
-                        const isActive = status === "active";
-                        const statusColor = isActive ? "green" : "red";
-                        item.style.background = `rgba(${isActive ? '0, 255, 0, 0.1' : '255, 0, 0, 0.15'})`;
-                        item.style.borderLeft = `4px solid ${statusColor}`;
-                        const toggleSwitch = item.querySelector('.status-toggle');
-                        if (toggleSwitch) {
-                            toggleSwitch.checked = isActive;
-                        }
-                    }
-                }
-            });
-=======
         function logExceedanceEvent(sensor, building, tempValue, userEmail) {
             const reportData = {
                 type: "daily",
@@ -250,7 +160,6 @@
             addDoc(collection(db, "reports"), reportData)
                 .then(() => console.log("Exceedance event logged"))
                 .catch(error => console.error("Error logging exceedance event:", error));
->>>>>>> Stashed changes
         }
 
         function loadSensors(userEmail, displayMode, filter = "all", searchQuery = "") {
@@ -277,13 +186,10 @@
                         const searchString = `${sensor.type} ${sensor.location || ''} ${sensor.riskLevels?.map(r => r.level).join(' ') || ''}`.toLowerCase();
                         if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
 
-<<<<<<< Updated upstream
-=======
                         if (sensor.source === "house/temp") {
                             heatSensorData = { sensor, building, docId: doc.id };
                         }
 
->>>>>>> Stashed changes
                         const highestRiskLevel = sensor.riskLevels && sensor.riskLevels.length > 0
                             ? Math.max(...sensor.riskLevels.map(r => r.level))
                             : 1;
@@ -431,7 +337,6 @@
                     } else {
                         loadCameras(user.email, "both");
                         loadSensors(user.email, "both");
-                        listenToRealtimeData(user.email);
                         setupEventListeners();
                     }
                 } catch (error) {
@@ -775,6 +680,7 @@
             <div class="sensor-list" id="sensorList"></div>
         </div>
     </div>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'93a8623809de53d4',t:'MTc0NjM2NTc1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
 </body>
 
 </html>
