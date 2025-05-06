@@ -28,6 +28,8 @@
 
         const notifiedSensors = new Set();
         let heatSensorData = null;
+        let lastNotificationTime = 0; // Track the last notification timestamp
+        const NOTIFICATION_DELAY = 3000; // 3 seconds delay between notifications
 
         function convertToEmbedUrl(url) {
             if (!url) return null;
@@ -152,7 +154,7 @@
                     floor: sensor.floor || "N/A",
                     uniqueId: sensor.uniqueId || "N/A",
                     temperature: tempValue,
-                    addedBy: userEmail // Add this to match Firestore rules
+                    addedBy: userEmail
                 },
                 timestamp: new Date().toISOString()
             };
@@ -160,6 +162,40 @@
             addDoc(collection(db, "reports"), reportData)
                 .then(() => console.log("Exceedance event logged"))
                 .catch(error => console.error("Error logging exceedance event:", error));
+        }
+
+        function showEmergencyModal(sensor, building, tempValue, triggeredRiskLevel, riskDescription) {
+            const currentTime = Date.now();
+            if (currentTime - lastNotificationTime < NOTIFICATION_DELAY) {
+                setTimeout(() => {
+                    showEmergencyModal(sensor, building, tempValue, triggeredRiskLevel, riskDescription);
+                }, NOTIFICATION_DELAY - (currentTime - lastNotificationTime));
+                return;
+            }
+
+            lastNotificationTime = currentTime;
+
+            const modal = document.createElement("div");
+            modal.className = "emergency-modal";
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>🚨 Emergency Alert</h3>
+                    <p><strong>Sensor:</strong> ${sensor.type}</p>
+                    <p><strong>Location:</strong> ${sensor.location || building.location || "Unknown"}</p>
+                    <p><strong>Building:</strong> ${sensor.buildingName || building.buildingName || "N/A"}</p>
+                    <p><strong>Temperature:</strong> ${tempValue}°C</p>
+                    <p><strong>Threshold Exceeded:</strong> ${triggeredRiskLevel.threshold}°C</p>
+                    <p><strong>Risk Level:</strong> Level ${triggeredRiskLevel.level}</p>
+                    <p><strong>Description:</strong> ${riskDescription || "No description provided"}</p>
+                    <button class="modal-close-btn">Acknowledge</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const closeBtn = modal.querySelector(".modal-close-btn");
+            closeBtn.addEventListener("click", () => {
+                modal.remove();
+            });
         }
 
         function loadSensors(userEmail, displayMode, filter = "all", searchQuery = "") {
@@ -281,14 +317,27 @@
                             lastReadingElement.textContent = `${tempValue}°C`;
                         }
 
-                        const highestThreshold = heatSensorData.sensor.riskLevels
-                            .filter(r => r.threshold)
-                            .sort((a, b) => b.threshold - a.threshold)[0]?.threshold;
+                        if (heatSensorData.sensor.status !== "active") return;
 
-                        if (highestThreshold && tempValue > highestThreshold) {
-                            const alertMessage = `Temperature Exceedance Alert!\nSensor: ${heatSensorData.sensor.type}\nLocation: ${heatSensorData.sensor.location || heatSensorData.building.location || "Unknown"}\nBuilding: ${heatSensorData.sensor.buildingName || heatSensorData.building.buildingName || "N/A"}\nTemperature: ${tempValue}°C\nThreshold: ${highestThreshold}°C`;
-                            alert(alertMessage);
-                            logExceedanceEvent(heatSensorData.sensor, heatSensorData.building, tempValue, auth.currentUser.email);
+                        const sortedRiskLevels = heatSensorData.sensor.riskLevels
+                            .filter(r => r.threshold)
+                            .sort((a, b) => b.threshold - a.threshold);
+                        const triggeredRiskLevel = sortedRiskLevels.find(r => tempValue > r.threshold);
+
+                        if (triggeredRiskLevel) {
+                            showEmergencyModal(
+                                heatSensorData.sensor,
+                                heatSensorData.building,
+                                tempValue,
+                                triggeredRiskLevel,
+                                triggeredRiskLevel.description
+                            );
+                            logExceedanceEvent(
+                                heatSensorData.sensor,
+                                heatSensorData.building,
+                                tempValue,
+                                auth.currentUser.email
+                            );
                         }
                     });
                 }
@@ -532,7 +581,7 @@
 
         select:focus,
         input:focus {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 6355, 0.2);
             outline: none;
         }
 
@@ -607,6 +656,71 @@
 
         input:not(:checked)+.slider {
             background-color: #ff0000;
+        }
+
+        /* Modal Styles */
+        .emergency-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: rgba(255, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            color: #fff;
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-content h3 {
+            margin: 0 0 15px;
+            font-size: 24px;
+            text-shadow: 0 0 5px #fff;
+        }
+
+        .modal-content p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .modal-close-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #fff;
+            color: #ff0000;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .modal-close-btn:hover {
+            background: #ddd;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         @media (max-width: 768px) {

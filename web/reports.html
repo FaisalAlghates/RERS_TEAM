@@ -24,65 +24,91 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        function filterReports(userEmail) {
-            const reportType = document.getElementById("reportType").value;
-            const reportList = document.getElementById("reportList");
+        const staticReports = [
+            { type: "daily", details: "Daily maintenance completed for security systems.", timestamp: "2025-05-01T10:00:00Z" },
+            { type: "weekly", details: "Weekly status check on emergency alerts.", timestamp: "2025-04-30T10:00:00Z" },
+            { type: "monthly", details: "Monthly incident report generated.", timestamp: "2025-04-01T10:00:00Z" },
+            { type: "yearly", details: "Yearly system audit completed successfully.", timestamp: "2025-01-01T10:00:00Z" }
+        ];
 
+        function renderReports(reports) {
+            const reportList = document.getElementById("reportList");
             reportList.innerHTML = "";
 
-            // Create query to fetch reports for the authenticated user
-            let q;
-            if (reportType === "all") {
-                q = query(collection(db, "reports"), where("sensorInfo.addedBy", "==", userEmail));
-            } else {
-                q = query(collection(db, "reports"), 
-                    where("sensorInfo.addedBy", "==", userEmail),
-                    where("type", "==", reportType)
-                );
-            }
-
-            // Real-time listener for reports
-            onSnapshot(q, (snapshot) => {
-                reportList.innerHTML = ""; // Clear list before adding new reports
-                if (snapshot.empty) {
-                    const item = document.createElement("div");
-                    item.className = "report-item";
-                    item.innerHTML = "No reports found for the selected type.";
-                    reportList.appendChild(item);
-                    return;
-                }
-
-                snapshot.forEach((doc) => {
-                    const report = doc.data();
-                    const item = document.createElement("div");
-                    item.className = `report-item ${report.type === "daily" ? "backlog" : ""}`;
+            reports.forEach(report => {
+                const item = document.createElement("div");
+                item.className = report.isBacklog ? "report-item backlog" : "report-item";
+                if (report.isBacklog) {
                     item.innerHTML = `
-                        <strong>${report.type.toUpperCase()} REPORT</strong><br>
-                        ${report.details}<br>
-                        Sensor: ${report.sensorInfo.type} | 
-                        Location: ${report.sensorInfo.location} | 
-                        Building: ${report.sensorInfo.buildingName} | 
-                        Floor: ${report.sensorInfo.floor} | 
+                        <strong>BACKLOG: ${report.details}</strong><br>
+                        Sensor: ${report.sensorInfo.type} | Location: ${report.sensorInfo.location} | 
+                        Building: ${report.sensorInfo.buildingName} | Floor: ${report.sensorInfo.floor} | 
                         Unique ID: ${report.sensorInfo.uniqueId} | 
                         Temperature: ${report.sensorInfo.temperature}°C<br>
                         Timestamp: ${new Date(report.timestamp).toLocaleString()}`;
-                    reportList.appendChild(item);
-                });
-            }, (error) => {
-                console.error("Error loading reports:", error);
-                const item = document.createElement("div");
-                item.className = "report-item";
-                item.innerHTML = "Error loading reports. Please try again.";
+                } else {
+                    item.innerHTML = `<strong>${report.type.toUpperCase()} REPORT</strong><br>${report.details}<br>
+                        Timestamp: ${new Date(report.timestamp).toLocaleString()}`;
+                }
                 reportList.appendChild(item);
             });
+        }
+
+        function filterReports() {
+            const reportType = document.getElementById("reportType").value;
+            const sortOrder = document.getElementById("sortOrder").value;
+
+            let allReports = [];
+
+            // Filter static reports
+            staticReports.forEach(report => {
+                if (report.type === reportType || reportType === "all") {
+                    allReports.push({ ...report, isBacklog: false });
+                }
+            });
+
+            // Fetch and filter Firestore reports
+            if (reportType === "daily" || reportType === "all") {
+                const q = query(collection(db, "reports"), where("type", "==", "daily"));
+                onSnapshot(q, (snapshot) => {
+                    const firestoreReports = [];
+                    snapshot.forEach((doc) => {
+                        const report = doc.data();
+                        firestoreReports.push({ ...report, isBacklog: true });
+                    });
+
+                    // Combine static and Firestore reports
+                    allReports = [...allReports, ...firestoreReports];
+
+                    // Sort reports based on timestamp
+                    allReports.sort((a, b) => {
+                        const dateA = new Date(a.timestamp);
+                        const dateB = new Date(b.timestamp);
+                        return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+                    });
+
+                    renderReports(allReports);
+                }, (error) => {
+                    console.error("Error loading backlog reports:", error);
+                });
+            } else {
+                // Sort static reports only if no Firestore reports are fetched
+                allReports.sort((a, b) => {
+                    const dateA = new Date(a.timestamp);
+                    const dateB = new Date(b.timestamp);
+                    return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+                });
+                renderReports(allReports);
+            }
         }
 
         onAuthStateChanged(auth, (user) => {
             if (!user) {
                 window.location.href = 'loginPage.html';
             } else {
-                filterReports(user.email); // Call filterReports with user's email on load
-                document.querySelector('.filter-button').addEventListener('click', () => filterReports(user.email));
+                filterReports();
+                document.querySelector('.filter-button').addEventListener('click', filterReports);
+                document.getElementById("sortOrder").addEventListener('change', filterReports);
             }
         });
     </script>
@@ -266,13 +292,16 @@
                     <option value="yearly">Yearly Report</option>
                     <option value="all">All Reports</option>
                 </select>
+                <select id="sortOrder">
+                    <option value="newest">Newest to Oldest</option>
+                    <option value="oldest">Oldest to Newest</option>
+                </select>
                 <button class="filter-button">Filter</button>
             </div>
 
             <div class="report-list" id="reportList"></div>
         </div>
     </div>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93ba48146e4bbcfe',t:'MTc0NjU1MzQyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 
 </html>
