@@ -54,7 +54,7 @@
             });
         }
 
-        function filterReports() {
+        function filterReports(userEmail) {
             const reportType = document.getElementById("reportType").value;
             const sortOrder = document.getElementById("sortOrder").value;
 
@@ -67,9 +67,9 @@
                 }
             });
 
-            // Fetch and filter Firestore reports
+            // Fetch and filter Firestore reports bound to the logged-in user
             if (reportType === "daily" || reportType === "all") {
-                const q = query(collection(db, "reports"), where("type", "==", "daily"));
+                const q = query(collection(db, "reports"), where("type", "==", "daily"), where("sensorInfo.addedBy", "==", userEmail));
                 onSnapshot(q, (snapshot) => {
                     const firestoreReports = [];
                     snapshot.forEach((doc) => {
@@ -106,9 +106,9 @@
             if (!user) {
                 window.location.href = 'loginPage.html';
             } else {
-                filterReports();
-                document.querySelector('.filter-button').addEventListener('click', filterReports);
-                document.getElementById("sortOrder").addEventListener('change', filterReports);
+                filterReports(user.email);
+                document.querySelector('.filter-button').addEventListener('click', () => filterReports(user.email));
+                document.getElementById("sortOrder").addEventListener('change', () => filterReports(user.email));
             }
         });
     </script>
