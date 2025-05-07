@@ -2,252 +2,427 @@
 <html lang="en">
 
 <head>
+    <!-- Set character encoding to UTF-8 -->
     <meta charset="UTF-8">
+    <!-- Ensure responsive viewport scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title -->
     <title>Add Sensor | RERS System</title>
+    <!-- Include Font Awesome for icons -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
+        /* Import Orbitron font from Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+        /* Define CSS custom properties for theming */
         :root {
             --primary-color: #ff0000;
+            /* Primary color for the theme */
             --secondary-color: #00ff00;
+            /* Secondary color for the theme */
             --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            /* Background gradient */
             --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
+            /* Sidebar gradient */
             --card-bg: rgba(255, 255, 255, 0.1);
+            /* Card background color */
             --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            /* Card shadow effect */
         }
 
+        /* General body styling */
         body {
             margin: 0;
+            /* Remove default margin */
             padding: 0;
+            /* Remove default padding */
             background: var(--bg-gradient);
+            /* Apply background gradient */
             color: #fff;
+            /* Set text color to white */
             font-family: 'Orbitron', sans-serif;
+            /* Set font to Orbitron */
             display: flex;
+            /* Use flexbox for layout */
             height: 100vh;
+            /* Full viewport height */
         }
 
+        /* Sidebar styling */
         .sidebar {
             width: 250px;
+            /* Fixed sidebar width */
             background: var(--sidebar-gradient);
+            /* Apply sidebar gradient */
             padding: 20px;
+            /* Inner padding */
             position: fixed;
+            /* Fix sidebar position */
             height: 100vh;
+            /* Full viewport height */
             box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+            /* Sidebar shadow */
             border-right: 2px solid var(--primary-color);
+            /* Right border */
         }
 
+        /* Sidebar navigation styling */
         .sidebar nav ul {
             list-style: none;
+            /* Remove bullet points */
             padding: 0;
+            /* Remove padding */
         }
 
+        /* Sidebar list items */
         .sidebar nav ul li {
             padding: 15px 0;
+            /* Vertical padding */
             text-align: center;
+            /* Center text */
         }
 
+        /* Sidebar link styling */
         .sidebar nav ul li a {
             color: var(--primary-color);
+            /* Link color */
             text-decoration: none;
+            /* Remove underline */
             font-size: 18px;
+            /* Font size */
             font-weight: bold;
+            /* Bold text */
             display: block;
+            /* Block-level element */
             padding: 10px;
+            /* Inner padding */
             border-radius: 5px;
+            /* Rounded corners */
         }
 
+        /* Main content area */
         .content {
             margin-left: 270px;
+            /* Offset for sidebar */
             padding: 40px;
+            /* Inner padding */
             width: calc(100% - 270px);
+            /* Adjust width for sidebar */
             text-align: center;
+            /* Center text */
             overflow-y: auto;
+            /* Enable vertical scrolling */
         }
 
+        /* Form container styling */
         .form-container {
             background: var(--card-bg);
+            /* Card background */
             padding: 30px;
+            /* Inner padding */
             border-radius: 15px;
+            /* Rounded corners */
             box-shadow: var(--card-shadow);
+            /* Card shadow */
             text-align: center;
+            /* Center text */
             width: 90%;
+            /* Responsive width */
             max-width: 800px;
+            /* Maximum width */
             margin: auto;
+            /* Center horizontally */
             display: flex;
+            /* Flexbox layout */
             flex-direction: column;
+            /* Vertical stacking */
             align-items: center;
+            /* Center items */
         }
 
+        /* Input group for form fields */
         .input-group {
             width: 100%;
+            /* Full width */
             display: flex;
+            /* Flexbox layout */
             justify-content: space-between;
+            /* Space between items */
             gap: 10px;
+            /* Gap between elements */
             margin-bottom: 10px;
+            /* Bottom margin */
         }
 
+        /* Input and select styling */
         .input-group input,
         .input-group select {
             flex: 1;
+            /* Equal flex growth */
             padding: 12px;
+            /* Inner padding */
             border-radius: 8px;
+            /* Rounded corners */
             border: none;
+            /* No border */
             font-size: 16px;
+            /* Font size */
             background: rgba(255, 255, 255, 0.2);
+            /* Semi-transparent background */
             color: #fff;
+            /* Text color */
             outline: none;
+            /* Remove outline */
         }
 
+        /* Checkbox wrapper styling */
         .checkbox-wrapper {
             display: flex;
+            /* Flexbox layout */
             align-items: center;
+            /* Vertical alignment */
             justify-content: flex-start;
+            /* Left-align content */
             margin-top: 15px;
+            /* Top margin */
             width: 100%;
+            /* Full width */
         }
 
+        /* Checkbox styling */
         .primary-checkbox {
             width: 18px;
+            /* Checkbox size */
             height: 18px;
+            /* Checkbox size */
             cursor: pointer;
+            /* Pointer cursor */
             margin-right: 10px;
+            /* Right margin */
         }
 
+        /* Form button styling */
         .form-container button {
             width: 100%;
+            /* Full width */
             padding: 15px;
+            /* Inner padding */
             background: var(--primary-color);
+            /* Button background */
             color: white;
+            /* Text color */
             font-weight: bold;
+            /* Bold text */
             border: none;
+            /* No border */
             border-radius: 5px;
+            /* Rounded corners */
             cursor: pointer;
+            /* Pointer cursor */
             font-size: 18px;
+            /* Font size */
             transition: 0.3s;
+            /* Smooth transition */
             margin-top: 20px;
+            /* Top margin */
         }
 
+        /* Button hover effect */
         .form-container button:hover {
             background: darkred;
+            /* Darker red on hover */
         }
 
+        /* Button group for multiple buttons */
         .button-group {
             display: flex;
+            /* Flexbox layout */
             gap: 10px;
+            /* Gap between buttons */
             width: 100%;
+            /* Full width */
         }
 
+        /* Button group button styling */
         .button-group button {
             flex: 1;
+            /* Equal flex growth */
         }
 
+        /* Select element styling */
         select {
             width: 100%;
+            /* Full width */
             padding: 12px;
+            /* Inner padding */
             border-radius: 8px;
+            /* Rounded corners */
             border: none;
+            /* No border */
             font-size: 16px;
+            /* Font size */
             background: rgba(255, 255, 255, 0.2);
+            /* Semi-transparent background */
             color: #fff;
+            /* Text color */
             outline: none;
+            /* Remove outline */
             cursor: pointer;
+            /* Pointer cursor */
         }
 
+        /* Hidden class to toggle visibility */
         .hidden {
             display: none;
+            /* Hide element */
         }
 
+        /* Connection types section */
         .connection-types {
             width: 100%;
+            /* Full width */
             margin: 15px 0;
+            /* Vertical margin */
             text-align: left;
+            /* Left-align text */
         }
 
+        /* Individual connection type */
         .connection-type {
             margin-bottom: 10px;
+            /* Bottom margin */
         }
 
+        /* Connection type label styling */
         .connection-type label {
             display: flex;
+            /* Flexbox layout */
             align-items: center;
+            /* Vertical alignment */
             cursor: pointer;
+            /* Pointer cursor */
         }
 
+        /* Connection type input styling */
         .connection-type input {
             margin-right: 10px;
+            /* Right margin */
         }
 
+        /* Connection details section */
         .connection-details {
             margin-left: 25px;
+            /* Left indent */
             margin-top: 5px;
+            /* Top margin */
             display: none;
+            /* Hidden by default */
         }
 
+        /* Connection details input styling */
         .connection-details input {
             width: 100%;
+            /* Full width */
             padding: 8px;
+            /* Inner padding */
             margin: 5px 0;
+            /* Vertical margin */
             border-radius: 5px;
+            /* Rounded corners */
             border: none;
+            /* No border */
             background: rgba(255, 255, 255, 0.2);
+            /* Semi-transparent background */
             color: #fff;
+            /* Text color */
         }
 
+        /* Risk levels section */
         .risk-levels {
             width: 100%;
+            /* Full width */
             margin: 15px 0;
+            /* Vertical margin */
             display: flex;
+            /* Flexbox layout */
             flex-direction: column;
+            /* Vertical stacking */
             gap: 10px;
+            /* Gap between items */
         }
 
+        /* Individual risk level styling */
         .risk-level {
             display: flex;
+            /* Flexbox layout */
             align-items: center;
+            /* Vertical alignment */
             padding: 10px;
+            /* Inner padding */
             border-radius: 5px;
+            /* Rounded corners */
             background: rgba(255, 255, 255, 0.1);
+            /* Semi-transparent background */
             cursor: pointer;
+            /* Pointer cursor */
         }
 
+        /* Risk level input styling */
         .risk-level input {
             margin-right: 10px;
+            /* Right margin */
         }
 
+        /* Low risk level styling */
         .risk-level.low {
             border-left: 4px solid #00ff00;
+            /* Green left border */
         }
 
+        /* Medium risk level styling */
         .risk-level.medium {
             border-left: 4px solid #ffcc00;
+            /* Yellow left border */
         }
 
+        /* High risk level styling */
         .risk-level.high {
             border-left: 4px solid #ff0000;
+            /* Red left border */
         }
 
+        /* Risk description section */
         .risk-description {
             display: none;
+            /* Hidden by default */
             margin-top: 5px;
+            /* Top margin */
         }
 
+        /* Risk description input styling */
         .risk-description input {
             width: 100%;
+            /* Full width */
             padding: 8px;
+            /* Inner padding */
             border-radius: 5px;
+            /* Rounded corners */
             border: none;
+            /* No border */
             background: rgba(255, 255, 255, 0.2);
+            /* Semi-transparent background */
             color: #fff;
+            /* Text color */
         }
     </style>
 </head>
 
 <body>
+    <!-- Sidebar navigation -->
     <aside class="sidebar">
         <nav>
             <ul>
+                <!-- Navigation links -->
                 <li><a href="../web/dashboard.html">dashboard</a></li>
                 <li><a href="../web/add_building.html">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
@@ -259,10 +434,13 @@
         </nav>
     </aside>
 
+    <!-- Main content area -->
     <div class="content">
+        <!-- Form container for adding a sensor -->
         <div class="form-container">
             <h2>Add New Sensor</h2>
 
+            <!-- Sensor type selection -->
             <div class="input-group">
                 <select id="sensorType">
                     <option value="Temperature">Temperature Sensor</option>
@@ -278,32 +456,39 @@
                 </select>
             </div>
 
+            <!-- GPS checkbox -->
             <div class="checkbox-wrapper">
                 <input type="checkbox" id="hasGps" class="primary-checkbox">
                 <label for="hasGps">Built-in GPS in Sensor</label>
             </div>
+            <!-- GPS-related fields (hidden by default) -->
             <div class="input-group hidden" id="hasGpsFields">
                 <select id="gpsBuildingName"></select>
                 <select id="gpsFloorNumber"></select>
             </div>
+            <!-- No GPS checkbox -->
             <div class="checkbox-wrapper">
                 <input type="checkbox" id="noGps" class="primary-checkbox">
                 <label for="noGps">Does not have built-in GPS</label>
             </div>
+            <!-- Non-GPS fields (hidden by default) -->
             <div class="input-group hidden" id="noGpsFields">
                 <input type="text" id="sensorLocation" placeholder="Sensor Location">
                 <select id="buildingName"></select>
                 <select id="floorNumber"></select>
             </div>
 
+            <!-- Connection types selection -->
             <div class="connection-types">
                 <h3>Connection Types</h3>
+                <!-- URL connection option -->
                 <div class="connection-type">
                     <label><input type="radio" name="connection" value="url"> URL Connection</label>
                     <div class="connection-details" id="urlConnection">
                         <input type="text" placeholder="Enter URL">
                     </div>
                 </div>
+                <!-- API connection option -->
                 <div class="connection-type">
                     <label><input type="radio" name="connection" value="api"> API Connection</label>
                     <div class="connection-details" id="apiConnection">
@@ -311,6 +496,7 @@
                         <input type="text" placeholder="API Key">
                     </div>
                 </div>
+                <!-- MQTT connection option -->
                 <div class="connection-type">
                     <label><input type="radio" name="connection" value="mqtt"> MQTT Connection</label>
                     <div class="connection-details" id="mqttConnection">
@@ -318,6 +504,7 @@
                         <input type="text" placeholder="Topic">
                     </div>
                 </div>
+                <!-- WebSocket connection option -->
                 <div class="connection-type">
                     <label><input type="radio" name="connection" value="websocket"> WebSocket Connection</label>
                     <div class="connection-details" id="websocketConnection">
@@ -326,36 +513,44 @@
                 </div>
             </div>
 
+            <!-- Risk level configuration -->
             <div class="risk-levels">
                 <h3>Risk Level Configuration</h3>
+                <!-- Low risk level -->
                 <div class="risk-level low">
                     <input type="checkbox" name="riskLevel" id="riskLow" value="1">
                     <label for="riskLow">Level 1 (Low Risk)</label>
                 </div>
+                <!-- Low risk description (hidden by default) -->
                 <div class="risk-description" id="descLow">
                     <input type="text" placeholder="Enter description for Low Risk">
                     <input type="number" id="thresholdLow" placeholder="Temperature Threshold (°C)" min="0">
                 </div>
 
+                <!-- Medium risk level -->
                 <div class="risk-level medium">
                     <input type="checkbox" name="riskLevel" id="riskMedium" value="2">
                     <label for="riskMedium">Level 2 (Medium Risk)</label>
                 </div>
+                <!-- Medium risk description (hidden by default) -->
                 <div class="risk-description" id="descMedium">
                     <input type="text" placeholder="Enter description for Medium Risk">
                     <input type="number" id="thresholdMedium" placeholder="Temperature Threshold (°C)" min="0">
                 </div>
 
+                <!-- High risk level -->
                 <div class="risk-level high">
                     <input type="checkbox" name="riskLevel" id="riskHigh" value="3">
                     <label for="riskHigh">Level 3 (High Risk)</label>
                 </div>
+                <!-- High risk description (hidden by default) -->
                 <div class="risk-description" id="descHigh">
                     <input type="text" placeholder="Enter description for High Risk">
                     <input type="number" id="thresholdHigh" placeholder="Temperature Threshold (°C)" min="0">
                 </div>
             </div>
 
+            <!-- Navigation and action buttons -->
             <div class="button-group">
                 <button onclick="window.location.href='add_building.html'">Previous</button>
                 <button onclick="addSensor()">Add Sensor</button>
@@ -365,10 +560,12 @@
     </div>
 
     <script type="module">
+        /* Import Firebase SDK modules */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, arrayUnion } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
+        /* Firebase configuration object */
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -378,22 +575,28 @@
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
 
+        /* Initialize Firebase app */
         const app = initializeApp(firebaseConfig);
+        /* Initialize Firestore database */
         const db = getFirestore(app);
+        /* Initialize Firebase Authentication */
         const auth = getAuth(app);
 
+        /* DOM elements for GPS/no-GPS toggles */
         const hasGps = document.getElementById('hasGps');
         const noGps = document.getElementById('noGps');
         const hasGpsFields = document.getElementById('hasGpsFields');
         const noGpsFields = document.getElementById('noGpsFields');
 
-        // Connection type toggles
+        /* Handle connection type radio button changes */
         const connectionRadios = document.querySelectorAll('input[name="connection"]');
         connectionRadios.forEach(radio => {
             radio.addEventListener('change', function () {
+                /* Hide all connection details */
                 document.querySelectorAll('.connection-details').forEach(details => {
                     details.style.display = 'none';
                 });
+                /* Show details for selected connection type */
                 const detailsDiv = document.getElementById(this.value + "Connection");
                 if (this.checked) {
                     detailsDiv.style.display = 'block';
@@ -401,53 +604,66 @@
             });
         });
 
-        // Risk level description toggles
+        /* Handle risk level checkbox changes */
         const riskCheckboxes = document.querySelectorAll('input[name="riskLevel"]');
         riskCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function () {
+                /* Toggle risk description visibility */
                 const descDiv = document.getElementById(`desc${this.id.replace('risk', '')}`);
                 descDiv.style.display = this.checked ? 'block' : 'none';
             });
         });
 
+        /* Handle GPS checkbox toggle */
         hasGps.addEventListener('change', function () {
             if (this.checked) {
+                /* Uncheck no-GPS and show GPS fields */
                 noGps.checked = false;
                 noGpsFields.classList.add('hidden');
                 hasGpsFields.classList.remove('hidden');
             } else {
+                /* Hide GPS fields */
                 hasGpsFields.classList.add('hidden');
             }
         });
 
+        /* Handle no-GPS checkbox toggle */
         noGps.addEventListener('change', function () {
             if (this.checked) {
+                /* Uncheck GPS and show no-GPS fields */
                 hasGps.checked = false;
                 noGpsFields.classList.remove('hidden');
                 hasGpsFields.classList.add('hidden');
             } else {
+                /* Hide no-GPS fields */
                 noGpsFields.classList.add('hidden');
             }
         });
 
+        /* Function to populate building and floor dropdowns */
         async function populateBuildingData() {
             try {
+                /* Get current authenticated user */
                 const user = auth.currentUser;
                 if (!user) {
                     console.log("User not authenticated");
                     return;
                 }
 
+                /* DOM elements for building and floor selections */
                 const buildingSelect = document.getElementById('buildingName');
                 const floorSelect = document.getElementById('floorNumber');
                 const gpsBuildingSelect = document.getElementById('gpsBuildingName');
                 const gpsFloorSelect = document.getElementById('gpsFloorNumber');
+                /* Initialize dropdowns with default option */
                 buildingSelect.innerHTML = '<option value="">Select a Building</option>';
                 gpsBuildingSelect.innerHTML = '<option value="">Select a Building</option>';
 
+                /* Query buildings added by the current user */
                 const q = query(collection(db, "buildings"), where("addedBy", "==", user.email));
                 const querySnapshot = await getDocs(q);
                 querySnapshot.forEach((doc) => {
+                    /* Populate building dropdowns */
                     const data = doc.data();
                     const option = document.createElement('option');
                     option.value = doc.id;
@@ -456,10 +672,12 @@
                     gpsBuildingSelect.appendChild(option.cloneNode(true));
                 });
 
+                /* Handle building selection for non-GPS */
                 buildingSelect.addEventListener('change', async function () {
                     const selectedBuildingId = this.value;
                     floorSelect.innerHTML = '<option value="">Select a Floor</option>';
                     if (selectedBuildingId) {
+                        /* Fetch building data to populate floors */
                         const buildingRef = doc(db, "buildings", selectedBuildingId);
                         const buildingSnap = await getDoc(buildingRef);
                         if (buildingSnap.exists()) {
@@ -471,10 +689,12 @@
                     }
                 });
 
+                /* Handle building selection for GPS */
                 gpsBuildingSelect.addEventListener('change', async function () {
                     const selectedBuildingId = this.value;
                     gpsFloorSelect.innerHTML = '<option value="">Select a Floor</option>';
                     if (selectedBuildingId) {
+                        /* Fetch building data to populate floors */
                         const buildingRef = doc(db, "buildings", selectedBuildingId);
                         const buildingSnap = await getDoc(buildingRef);
                         if (buildingSnap.exists()) {
@@ -486,19 +706,24 @@
                     }
                 });
 
+                /* Log fetched buildings for debugging */
                 console.log("Buildings fetched:", querySnapshot.docs.map(doc => doc.data()));
             } catch (error) {
+                /* Log errors during building fetch */
                 console.error("Error fetching buildings:", error);
             }
         }
 
+        /* Function to add a new sensor */
         window.addSensor = function () {
             onAuthStateChanged(auth, async (user) => {
+                /* Check if user is authenticated */
                 if (!user) {
                     alert("You must be logged in to add a sensor!");
                     return;
                 }
 
+                /* Determine selected building */
                 let buildingId;
                 if (hasGps.checked) {
                     buildingId = document.getElementById("gpsBuildingName").value;
@@ -510,12 +735,15 @@
                     return;
                 }
 
+                /* Get sensor type */
                 const sensorType = document.getElementById("sensorType").value;
+                /* Get selected risk levels */
                 const selectedRisks = document.querySelectorAll('input[name="riskLevel"]:checked');
                 if (selectedRisks.length === 0) {
                     alert("Please select at least one risk level!");
                     return;
                 }
+                /* Map risk levels to data structure */
                 const riskLevels = Array.from(selectedRisks).map(risk => {
                     const levelId = risk.id.replace('risk', '');
                     const thresholdInput = document.getElementById(`threshold${levelId}`);
@@ -526,6 +754,7 @@
                     };
                 });
 
+                /* Collect connection details */
                 const connections = {};
                 connectionRadios.forEach(radio => {
                     if (radio.checked) {
@@ -535,12 +764,14 @@
                     }
                 });
 
+                /* Validate sensor location for non-GPS */
                 if (noGps.checked && !document.getElementById("sensorLocation").value.trim()) {
                     alert("Please enter a sensor location!");
                     return;
                 }
 
                 try {
+                    /* Fetch building data */
                     const buildingRef = doc(db, "buildings", buildingId);
                     const buildingSnap = await getDoc(buildingRef);
                     if (!buildingSnap.exists()) {
@@ -549,6 +780,7 @@
                     }
                     const buildingData = buildingSnap.data();
 
+                    /* Construct sensor data object */
                     const sensorData = {
                         type: sensorType,
                         riskLevels: riskLevels,
@@ -561,6 +793,7 @@
                         source: sensorType === "Temperature" ? "house/temp" : null // Link to Realtime Database
                     };
 
+                    /* Add GPS or non-GPS specific data */
                     if (hasGps.checked) {
                         sensorData.hasGps = true;
                         sensorData.buildingName = buildingData.buildingName;
@@ -572,31 +805,39 @@
                         sensorData.floor = document.getElementById("floorNumber").value;
                     }
 
+                    /* Update building document with new sensor */
                     await updateDoc(buildingRef, {
                         sensors: arrayUnion(sensorData)
                     });
 
+                    /* Notify user of success and redirect */
                     alert(`${sensorType} sensor added successfully!`);
                     window.location.href = 'monitoring.html';
                 } catch (error) {
+                    /* Handle errors during sensor addition */
                     console.error("Error adding sensor:", error);
                     alert("Failed to add sensor. Please try again.");
                 }
             });
         };
 
+        /* Handle authentication state changes */
         onAuthStateChanged(auth, (user) => {
             if (!user) {
+                /* Redirect to login if not authenticated */
                 window.location.href = '../web/loginPage.html';
             } else {
+                /* Populate building data if authenticated */
                 populateBuildingData();
             }
         });
     </script>
     <script>
+        /* IIFE for Cloudflare challenge integration */
         (function () {
             let a;
 
+            /* Function to inject Cloudflare challenge script */
             function c() {
                 const b = a.contentDocument || a.contentWindow.document;
                 if (b) {
@@ -606,6 +847,7 @@
                 }
             }
 
+            /* Create and configure iframe for Cloudflare challenge */
             if (document.body) {
                 a = document.createElement('iframe');
                 a.height = 1;
@@ -617,6 +859,7 @@
                 a.style.visibility = 'hidden';
                 document.body.appendChild(a);
 
+                /* Execute challenge script based on document state */
                 if ('loading' !== document.readyState) {
                     c();
                 } else if (window.addEventListener) {
