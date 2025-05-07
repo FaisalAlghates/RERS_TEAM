@@ -2,16 +2,23 @@
 <html lang="en">
 
 <head>
+    <!-- Define character encoding for the document -->
     <meta charset="UTF-8">
+    <!-- Ensure responsive viewport scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Set the page title -->
     <title>Monitoring | RERS System</title>
+    <!-- Include Font Awesome for icons -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <!-- JavaScript module for Firebase integration and page functionality -->
     <script type="module">
+        // Import Firebase modules for app initialization, Firestore, Authentication, and Realtime Database
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, getDoc, query, where, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
+        // Firebase configuration object with API keys and project details
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -21,16 +28,25 @@
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
 
+        // Initialize Firebase app
         const app = initializeApp(firebaseConfig);
+        // Initialize Firestore database
         const db = getFirestore(app);
+        // Initialize Realtime Database
         const rtdb = getDatabase(app);
+        // Initialize Firebase Authentication
         const auth = getAuth(app);
 
+        // Track notified sensors to avoid duplicate notifications
         const notifiedSensors = new Set();
+        // Store heat sensor data for monitoring
         let heatSensorData = null;
-        let lastNotificationTime = 0; // Track the last notification timestamp
-        const NOTIFICATION_DELAY = 3000; // 3 seconds delay between notifications
+        // Track last notification timestamp to enforce delay
+        let lastNotificationTime = 0;
+        // Define notification delay in milliseconds (3 seconds)
+        const NOTIFICATION_DELAY = 3000;
 
+        // Convert YouTube URLs to embed format for iframe compatibility
         function convertToEmbedUrl(url) {
             if (!url) return null;
             if (url.includes('youtube.com/embed/')) return url;
@@ -40,6 +56,7 @@
             return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
         }
 
+        // Validate URLs for security and compatibility
         const isValidURL = (url) => {
             try {
                 new URL(url);
@@ -51,20 +68,27 @@
             }
         };
 
+        // Send notifications based on sensor data and risk levels
         function notifyParty(sensor, building) {
+            // Generate unique sensor ID
             const sensorId = sensor.uniqueId || `${sensor.type}-${sensor.location || 'unknown'}`;
+            // Skip if already notified
             if (notifiedSensors.has(sensorId)) return;
 
+            // Default contact information
             const contacts = building.contacts || {};
             const contactEmail = contacts.email || "admin@example.com";
             const contactPhone = contacts.phone || "+1234567890";
+            // Determine highest risk level
             const highestRiskLevel = sensor.riskLevels && sensor.riskLevels.length > 0
                 ? Math.max(...sensor.riskLevels.map(r => r.level))
                 : 1;
 
+            // Initialize notification method and message
             let notificationMethod = "Email";
             let notificationMessage = `Sensor Alert: ${sensor.type} at ${sensor.location || building.location || "Unknown"} (Building: ${building.buildingName || "N/A"}) - Highest Risk Level: ${highestRiskLevel}`;
 
+            // Customize notification based on risk level
             if (highestRiskLevel >= 3) {
                 notificationMethod = "Email and SMS (High Priority)";
                 notificationMessage += " - Immediate action required!";
@@ -76,41 +100,58 @@
                 notificationMessage += " - For your information.";
             }
 
+            // Log notification details to console
             console.log(`Notifying party via ${notificationMethod} to ${contactEmail}${contactPhone ? ` and ${contactPhone}` : ''}: ${notificationMessage}`);
+            // Mark sensor as notified
             notifiedSensors.add(sensorId);
         }
 
+        // Load and display camera feeds based on user and display mode
         function loadCameras(userEmail, displayMode) {
+            // Get camera grid container
             const container = document.getElementById("cameraGrid");
+            // Get camera header element
             const cameraHeader = document.getElementById("cameraHeader");
+            // Hide cameras if in sensors-only mode
             if (displayMode === "sensors") {
                 container.style.display = "none";
                 return;
             }
+            // Show camera grid
             container.style.display = "grid";
+            // Display loading message
             container.innerHTML = '<p class="loading">Loading Cameras...</p>';
 
+            // Query buildings added by the user
             const q = query(collection(db, "buildings"), where("addedBy", "==", userEmail));
+            // Listen for real-time updates
             onSnapshot(q, (snapshot) => {
                 let camerasHTML = "";
                 let cameraCount = 0;
 
+                // Iterate through building documents
                 snapshot.forEach((doc) => {
                     const building = doc.data();
+                    // Check if building has cameras
                     if (building.cameras && Array.isArray(building.cameras)) {
                         building.cameras.forEach((camera) => {
+                            // Limit cameras in non-camera mode
                             if (displayMode !== "cameras" && cameraCount >= 6) return;
+                            // Determine connection type
                             const connectionType = camera.connections && Object.keys(camera.connections).length > 0
                                 ? Object.keys(camera.connections)[0] : "N/A";
+                            // Get camera URL
                             const cameraUrl = camera.connections && camera.connections[connectionType] && camera.connections[connectionType][0]
                                 ? camera.connections[connectionType][0]
                                 : camera.url;
 
+                            // Validate and format URL
                             if (isValidURL(cameraUrl)) {
                                 const displayUrl = (cameraUrl.includes('youtube.com') || cameraUrl.includes('youtu.be'))
                                     ? convertToEmbedUrl(cameraUrl)
                                     : cameraUrl;
 
+                                // Generate camera feed HTML
                                 camerasHTML += `
                                     <div class="camera-feed">
                                         <h4>${camera.location || building.location || "Unknown"}</h4>
@@ -123,8 +164,10 @@
                     }
                 });
 
+                // Update camera header with count
                 cameraHeader.textContent = `Cameras (${displayMode === "cameras" ? cameraCount : 6})`;
 
+                // Add placeholder cameras if needed
                 if (displayMode !== "cameras") {
                     while (cameraCount < 6) {
                         camerasHTML += `
@@ -136,14 +179,18 @@
                     }
                 }
 
+                // Update container with camera HTML or fallback message
                 container.innerHTML = camerasHTML || "<p>No cameras available</p>";
             }, (error) => {
+                // Handle errors in loading cameras
                 console.error("Error loading cameras:", error);
                 container.innerHTML = `<p>Error loading cameras: ${error.message}</p>`;
             });
         }
 
+        // Log temperature exceedance events to Firestore
         function logExceedanceEvent(sensor, building, tempValue, userEmail) {
+            // Structure report data
             const reportData = {
                 type: "daily",
                 details: `Temperature Exceedance: ${tempValue}°C detected by ${sensor.type} sensor at ${sensor.location || building.location || "Unknown"} (Building: ${sensor.buildingName || building.buildingName || "N/A"})`,
@@ -159,12 +206,15 @@
                 timestamp: new Date().toISOString()
             };
 
+            // Add report to Firestore
             addDoc(collection(db, "reports"), reportData)
                 .then(() => console.log("Exceedance event logged"))
                 .catch(error => console.error("Error logging exceedance event:", error));
         }
 
+        // Display emergency modal for critical sensor alerts
         function showEmergencyModal(sensor, building, tempValue, triggeredRiskLevel, riskDescription) {
+            // Enforce notification delay
             const currentTime = Date.now();
             if (currentTime - lastNotificationTime < NOTIFICATION_DELAY) {
                 setTimeout(() => {
@@ -173,8 +223,10 @@
                 return;
             }
 
+            // Update last notification time
             lastNotificationTime = currentTime;
 
+            // Create modal element
             const modal = document.createElement("div");
             modal.className = "emergency-modal";
             modal.innerHTML = `
@@ -190,55 +242,77 @@
                     <button class="modal-close-btn">Acknowledge</button>
                 </div>
             `;
+            // Append modal to document body
             document.body.appendChild(modal);
 
+            // Add close button event listener
             const closeBtn = modal.querySelector(".modal-close-btn");
             closeBtn.addEventListener("click", () => {
                 modal.remove();
             });
         }
 
+        // Load and display sensor data based on user, display mode, and filters
         function loadSensors(userEmail, displayMode, filter = "all", searchQuery = "") {
+            // Get sensor list container
             const container = document.getElementById("sensorList");
+            // Get sensor header element
             const sensorHeader = document.getElementById("sensorHeader");
+            // Hide sensors if in cameras-only mode
             if (displayMode === "cameras") {
                 container.style.display = "none";
                 return;
             }
+            // Show sensor list
             container.style.display = "flex";
+            // Display loading message
             container.innerHTML = '<p class="loading">Loading Sensors...</p>';
 
-            const q = query(collection(db, "buildings"), where("addedBy", "==", userEmail));
+            // Query buildings added by the user
+            const q = query(collection(db, "buildings"), where("addedBy", "手中的==", userEmail));
+            // Listen for real-time updates
             onSnapshot(q, (snapshot) => {
                 let sensorsHTML = "";
                 let sensorCount = 0;
 
+                // Iterate through building documents
                 snapshot.forEach((doc) => {
                     const building = doc.data();
+                    // Normalize sensors data to array
                     let sensorsArray = Array.isArray(building.sensors) ? building.sensors : Object.values(building.sensors || {});
                     sensorsArray.forEach((sensor) => {
+                        // Limit sensors in non-sensor mode
                         if (displayMode !== "sensors" && sensorCount >= 10) return;
+                        // Apply status filter
                         if (filter !== "all" && sensor.status !== filter) return;
+                        // Apply search query filter
                         const searchString = `${sensor.type} ${sensor.location || ''} ${sensor.riskLevels?.map(r => r.level).join(' ') || ''}`.toLowerCase();
                         if (searchQuery && !searchString.includes(searchQuery.toLowerCase())) return;
 
+                        // Store heat sensor data
                         if (sensor.source === "house/temp") {
                             heatSensorData = { sensor, building, docId: doc.id };
                         }
 
+                        // Determine highest risk level
                         const highestRiskLevel = sensor.riskLevels && sensor.riskLevels.length > 0
                             ? Math.max(...sensor.riskLevels.map(r => r.level))
                             : 1;
+                        // Set sensor state based on risk level
                         const state = highestRiskLevel >= 3 ? "Danger" : "Normal";
+                        // Format risk levels text
                         const riskLevelsText = sensor.riskLevels && sensor.riskLevels.length > 0
                             ? sensor.riskLevels.map(r => `Level ${r.level} (${r.description || "No description"})`).join(', ')
                             : "Unknown";
+                        // Get connection type
                         const connectionType = sensor.connections ? Object.keys(sensor.connections)[0] || "N/A" : "N/A";
 
+                        // Determine sensor status
                         const isActive = sensor.status === "active";
                         const statusColor = isActive ? "green" : "red";
                         const toggleChecked = isActive ? "checked" : "";
 
+                        // Generate sensor item HTML
                         sensorsHTML += `
                             <div class="sensor-item ${sensor.status || "unknown"} ${state.toLowerCase()}" style="background: rgba(${isActive ? '0, 255, 0, 0.1' : '255, 0, 0, 0.15'}); border-left: 4px solid ${statusColor};">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -262,14 +336,17 @@
                             </div>`;
                         sensorCount++;
 
+                        // Notify if sensor is activated
                         if (sensor.activated === true) {
                             notifyParty(sensor, building);
                         }
                     });
                 });
 
+                // Update sensor header with count
                 sensorHeader.textContent = `Sensors (${displayMode === "sensors" ? sensorCount : 10})`;
 
+                // Add placeholder sensors if needed
                 if (displayMode !== "sensors") {
                     while (sensorCount < 10) {
                         sensorsHTML += `
@@ -281,18 +358,25 @@
                     }
                 }
 
+                // Update container with sensor HTML or fallback message
                 container.innerHTML = sensorsHTML || "<p>No sensors available</p>";
 
+                // Add event listeners for status toggles
                 document.querySelectorAll('.status-toggle').forEach(toggle => {
                     toggle.addEventListener('change', async function () {
+                        // Get sensor unique ID
                         const uniqueId = this.getAttribute('data-unique-id');
+                        // Determine new status
                         const newStatus = this.checked ? "active" : "inactive";
                         const newColor = this.checked ? "green" : "red";
+                        // Get parent sensor item
                         const sensorItem = this.closest('.sensor-item');
 
+                        // Update sensor item styling
                         sensorItem.style.background = `rgba(${this.checked ? '0, 255, 0, 0.1' : '255, 0, 0, 0.15'})`;
                         sensorItem.style.borderLeft = `4px solid ${newColor}`;
 
+                        // Update sensor status in Firestore
                         snapshot.forEach(async (docSnap) => {
                             const building = docSnap.data();
                             const sensorsArray = Array.isArray(building.sensors) ? building.sensors : Object.values(building.sensors || {});
@@ -308,22 +392,29 @@
                     });
                 });
 
+                // Monitor heat sensor data in real-time
                 if (heatSensorData) {
                     const tempRef = ref(rtdb, "house/temp");
                     onValue(tempRef, (snapshot) => {
+                        // Get temperature value
                         const tempValue = snapshot.val();
+                        // Update last reading display
                         const lastReadingElement = document.getElementById(`lastReading-${heatSensorData.sensor.uniqueId}`);
                         if (lastReadingElement) {
                             lastReadingElement.textContent = `${tempValue}°C`;
                         }
 
+                        // Skip if sensor is inactive
                         if (heatSensorData.sensor.status !== "active") return;
 
+                        // Sort risk levels by threshold
                         const sortedRiskLevels = heatSensorData.sensor.riskLevels
                             .filter(r => r.threshold)
                             .sort((a, b) => b.threshold - a.threshold);
+                        // Find triggered risk level
                         const triggeredRiskLevel = sortedRiskLevels.find(r => tempValue > r.threshold);
 
+                        // Show emergency modal and log event if threshold exceeded
                         if (triggeredRiskLevel) {
                             showEmergencyModal(
                                 heatSensorData.sensor,
@@ -342,21 +433,25 @@
                     });
                 }
             }, (error) => {
+                // Handle errors in loading sensors
                 console.error("Error loading sensors:", error);
                 container.innerHTML = `<p>Error loading sensors: ${error.message}</p>`;
             });
         }
 
+        // Set up event listeners for UI controls
         function setupEventListeners() {
             const sensorFilter = document.getElementById("sensorFilter");
             const searchSensorInput = document.getElementById("searchSensorInput");
             const displayToggle = document.getElementById("displayToggle");
             let debounceTimeout;
 
+            // Filter sensors on change
             sensorFilter.addEventListener("change", () => {
                 loadSensors(auth.currentUser?.email, displayToggle.value, sensorFilter.value, searchSensorInput.value);
             });
 
+            // Debounce search input for performance
             searchSensorInput.addEventListener("input", () => {
                 clearTimeout(debounceTimeout);
                 debounceTimeout = setTimeout(() => {
@@ -364,15 +459,18 @@
                 }, 300);
             });
 
+            // Toggle display mode
             displayToggle.addEventListener("change", () => {
                 loadCameras(auth.currentUser?.email, displayToggle.value);
                 loadSensors(auth.currentUser?.email, displayToggle.value, sensorFilter.value, searchSensorInput.value);
             });
         }
 
+        // Handle authentication state changes
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
+                    // Check user trial status
                     const userDoc = await getDoc(doc(db, "users", user.uid));
                     const userData = userDoc.data();
                     const trialStart = userData?.trialStart?.toDate();
@@ -380,25 +478,32 @@
                     const trialDays = 5;
                     const trialEnd = new Date(trialStart?.getTime() + trialDays * 24 * 60 * 60 * 1000);
 
+                    // Redirect to payment if trial expired
                     if (!userData?.subscribed && now > trialEnd) {
                         alert("Your 5-day trial has expired. Please subscribe to continue.");
                         window.location.href = 'payment.html';
                     } else {
+                        // Load cameras and sensors, set up listeners
                         loadCameras(user.email, "both");
                         loadSensors(user.email, "both");
                         setupEventListeners();
                     }
                 } catch (error) {
+                    // Handle errors in trial status check
                     console.error("Error checking trial status:", error);
                 }
             } else {
+                // Redirect to login if not authenticated
                 window.location.href = 'loginPage.html';
             }
         });
     </script>
+    <!-- CSS styles for the monitoring dashboard -->
     <style>
+        /* Import Orbitron font from Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+        /* Define CSS variables for theming */
         :root {
             --primary-color: #ff0000;
             --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
@@ -407,6 +512,7 @@
             --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
         }
 
+        /* Basic body styling */
         body {
             margin: 0;
             padding: 0;
@@ -418,6 +524,7 @@
             overflow: hidden;
         }
 
+        /* Sidebar styling */
         .sidebar {
             width: 250px;
             background: var(--sidebar-gradient);
@@ -428,6 +535,7 @@
             border-right: 2px solid var(--primary-color);
         }
 
+        /* Sidebar navigation styling */
         .sidebar nav ul {
             list-style: none;
             padding: 0;
@@ -453,6 +561,7 @@
             color: #fff;
         }
 
+        /* Main content area styling */
         .content {
             margin-left: 300px;
             padding: 30px;
@@ -460,6 +569,7 @@
             overflow-y: auto;
         }
 
+        /* Monitor container styling */
         .monitor-container {
             background: var(--card-bg);
             padding: 25px;
@@ -476,6 +586,7 @@
             margin-bottom: 20px;
         }
 
+        /* Camera grid layout */
         .camera-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -483,6 +594,7 @@
             margin-top: 15px;
         }
 
+        /* Camera feed styling */
         .camera-feed {
             background: #000;
             border-radius: 10px;
@@ -516,6 +628,7 @@
             text-align: center;
         }
 
+        /* Sensor controls layout */
         .sensor-controls {
             display: flex;
             align-items: center;
@@ -524,12 +637,14 @@
             margin: 15px 0;
         }
 
+        /* Sensor list layout */
         .sensor-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
+        /* Sensor item styling */
         .sensor-item {
             background: var(--card-bg);
             padding: 15px;
@@ -563,6 +678,7 @@
             font-size: 12px;
         }
 
+        /* Form input styling */
         select,
         input {
             padding: 8px;
@@ -585,11 +701,13 @@
             outline: none;
         }
 
+        /* Label styling */
         label {
             font-size: 14px;
             font-weight: 700;
         }
 
+        /* Loading animation */
         .loading::before {
             content: "";
             display: inline-block;
@@ -608,6 +726,7 @@
             }
         }
 
+        /* Toggle switch styling */
         .toggle-switch {
             position: relative;
             display: inline-block;
@@ -658,7 +777,7 @@
             background-color: #ff0000;
         }
 
-        /* Modal Styles */
+        /* Modal styling for emergency alerts */
         .emergency-modal {
             position: fixed;
             top: 0;
@@ -711,6 +830,7 @@
             background: #ddd;
         }
 
+        /* Modal animation */
         @keyframes slideIn {
             from {
                 transform: translateY(-50px);
@@ -723,6 +843,7 @@
             }
         }
 
+        /* Responsive design for smaller screens */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -755,9 +876,11 @@
 </head>
 
 <body>
+    <!-- Sidebar navigation -->
     <aside class="sidebar">
         <nav>
             <ul>
+                <!-- Navigation links -->
                 <li><a href="../web/dashboard.html">dashboard</a></li>
                 <li><a href="../web/add_building.html">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
@@ -769,9 +892,12 @@
         </nav>
     </aside>
 
+    <!-- Main content area -->
     <div class="content">
         <div class="monitor-container">
+            <!-- Page title -->
             <h2>Monitoring Dashboard</h2>
+            <!-- Sensor control panel -->
             <div class="sensor-controls">
                 <label for="displayToggle">Display:</label>
                 <select id="displayToggle">
@@ -788,13 +914,20 @@
                 <label for="searchSensorInput">Search:</label>
                 <input type="text" id="searchSensorInput" placeholder="Search sensors..." />
             </div>
+            <!-- Camera section header -->
             <h3 id="cameraHeader">Cameras (6)</h3>
+            <!-- Camera grid container -->
             <div class="camera-grid" id="cameraGrid"></div>
+            <!-- Sensor section header -->
             <h3 id="sensorHeader">Sensors (10)</h3>
+            <!-- Sensor list container -->
             <div class="sensor-list" id="sensorList"></div>
         </div>
     </div>
+    <!-- Cloudflare challenge script for security -->
     <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'93a8623809de53d4',t:'MTc0NjM2NTc1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+    <!-- Additional Cloudflare challenge script -->
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93be2ccdfb6aadcc',t:'MTc0NjU5NDI0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 
 </html>
