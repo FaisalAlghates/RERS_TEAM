@@ -2,15 +2,21 @@
 <html lang="en">
 
 <head>
+    <!-- Set character encoding to UTF-8 -->
     <meta charset="UTF-8">
+    <!-- Ensure responsive viewport scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title -->
     <title>Add Building | RERS System</title>
+    <!-- Include Font Awesome for icons -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script type="module">
+        /* Import Firebase SDK modules */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
+        /* Firebase configuration object */
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -20,33 +26,41 @@
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
 
+        /* Initialize Firebase app */
         const app = initializeApp(firebaseConfig);
+        /* Initialize Firestore database */
         const db = getFirestore(app);
+        /* Initialize Firebase Authentication */
         const auth = getAuth(app);
 
+        /* Function to add a new building */
         window.addBuilding = function () {
             onAuthStateChanged(auth, async (user) => {
+                /* Check if user is authenticated */
                 if (!user) {
                     alert("You must be logged in to add a building!");
                     return;
                 }
 
+                /* Get input values */
                 const buildingName = document.getElementById("buildingName").value.trim();
                 const location = document.getElementById("location").value.trim();
                 const floors = document.getElementById("floors").value;
                 const domainNumber = document.getElementById("domainNumber").value.trim();
 
+                /* Validate input fields */
                 if (!buildingName || !location || !floors || !domainNumber) {
                     alert("Please fill in all fields!");
                     return;
                 }
+                /* Validate number of floors */
                 if (isNaN(floors) || floors <= 0) {
                     alert("Number of floors must be a positive number!");
                     return;
                 }
 
                 try {
-                    // Check if domainNumber already exists
+                    /* Check if domainNumber already exists */
                     const q = query(collection(db, "buildings"), where("domainNumber", "==", domainNumber));
                     const querySnapshot = await getDocs(q);
 
@@ -55,6 +69,7 @@
                         return;
                     }
 
+                    /* Construct building data object */
                     const buildingData = {
                         buildingName,
                         location,
@@ -66,10 +81,13 @@
                         timestamp: new Date().toISOString()
                     };
 
+                    /* Add building to Firestore */
                     await addDoc(collection(db, "buildings"), buildingData);
+                    /* Notify user of success and redirect */
                     alert("Building added successfully!");
                     window.location.href = 'add_sensor.html';
                 } catch (error) {
+                    /* Handle errors during building addition */
                     console.error("Error adding building:", error);
                     alert("Failed to add building. Please try again.");
                 }
@@ -78,158 +96,261 @@
     </script>
 
     <style>
+        /* Import Orbitron font from Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+        /* Define CSS custom properties for theming */
         :root {
             --primary-color: #ff0000;
+            /* Primary color for the theme */
             --secondary-color: #00ff00;
+            /* Secondary color for the theme */
             --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            /* Background gradient */
             --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
+            /* Sidebar gradient */
             --card-bg: rgba(255, 255, 255, 0.1);
+            /* Card background color */
             --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            /* Card shadow effect */
         }
 
+        /* General body styling */
         body {
             margin: 0;
+            /* Remove default margin */
             padding: 0;
+            /* Remove default padding */
             background: var(--bg-gradient);
+            /* Apply background gradient */
             color: #fff;
+            /* Set text color to white */
             font-family: 'Orbitron', sans-serif;
+            /* Set font to Orbitron */
             display: flex;
+            /* Use flexbox for layout */
             height: 100vh;
+            /* Full viewport height */
         }
 
+        /* Sidebar styling */
         .sidebar {
             width: 250px;
+            /* Fixed sidebar width */
             background: var(--sidebar-gradient);
+            /* Apply sidebar gradient */
             padding: 20px;
+            /* Inner padding */
             position: fixed;
+            /* Fix sidebar position */
             height: 100vh;
+            /* Full viewport height */
             box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+            /* Sidebar shadow */
             border-right: 2px solid var(--primary-color);
+            /* Right border */
         }
 
+        /* Sidebar navigation styling */
         .sidebar nav ul {
             list-style: none;
+            /* Remove bullet points */
             padding: 0;
+            /* Remove padding */
         }
 
+        /* Sidebar list items */
         .sidebar nav ul li {
             padding: 15px 0;
+            /* Vertical padding */
             text-align: center;
+            /* Center text */
         }
 
+        /* Sidebar link styling */
         .sidebar nav ul li a {
             color: var(--primary-color);
+            /* Link color */
             text-decoration: none;
+            /* Remove underline */
             font-size: 18px;
+            /* Font size */
             font-weight: bold;
+            /* Bold text */
             display: block;
+            /* Block-level element */
             padding: 10px;
+            /* Inner padding */
             border-radius: 5px;
+            /* Rounded corners */
         }
 
+        /* Main content area */
         .content {
             margin-left: 270px;
+            /* Offset for sidebar */
             padding: 30px;
+            /* Inner padding */
             width: calc(100% - 270px);
+            /* Adjust width for sidebar */
             overflow-y: auto;
+            /* Enable vertical scrolling */
             display: flex;
+            /* Flexbox layout */
             justify-content: center;
+            /* Center horizontally */
             align-items: center;
+            /* Center vertically */
         }
 
+        /* Form container styling */
         .form-container {
             background: var(--card-bg);
+            /* Card background */
             padding: 25px;
+            /* Inner padding */
             border-radius: 12px;
+            /* Rounded corners */
             box-shadow: var(--card-shadow);
+            /* Card shadow */
             max-width: 600px;
+            /* Maximum width */
             width: 100%;
+            /* Full width */
             text-align: center;
+            /* Center text */
         }
 
+        /* Form heading styling */
         .form-container h2 {
             font-size: 24px;
+            /* Font size */
             text-shadow: 0 0 10px var(--primary-color);
+            /* Text shadow effect */
             margin-bottom: 20px;
+            /* Bottom margin */
         }
 
+        /* Input group for form fields */
         .input-group {
             margin-bottom: 15px;
+            /* Bottom margin */
         }
 
+        /* Input styling */
         .input-group input {
             width: 100%;
+            /* Full width */
             padding: 10px;
+            /* Inner padding */
             border-radius: 6px;
+            /* Rounded corners */
             border: none;
+            /* No border */
             background: rgba(255, 255, 255, 0.1);
+            /* Semi-transparent background */
             color: #fff;
+            /* Text color */
             font-size: 14px;
+            /* Font size */
             transition: background 0.3s;
+            /* Smooth background transition */
         }
 
+        /* Input hover and focus effects */
         .input-group input:hover,
         .input-group input:focus {
             background: rgba(255, 255, 255, 0.2);
+            /* Lighter background on hover/focus */
             outline: none;
+            /* Remove outline */
         }
 
+        /* Button group for multiple buttons */
         .button-group {
             display: flex;
+            /* Flexbox layout */
             gap: 10px;
+            /* Gap between buttons */
             width: 100%;
+            /* Full width */
         }
 
+        /* Button group button styling */
         .button-group button {
             flex: 1;
+            /* Equal flex growth */
             padding: 12px;
+            /* Inner padding */
             background: var(--primary-color);
+            /* Button background */
             color: #fff;
+            /* Text color */
             font-weight: 700;
+            /* Bold text */
             border: none;
+            /* No border */
             border-radius: 6px;
+            /* Rounded corners */
             cursor: pointer;
+            /* Pointer cursor */
             font-size: 16px;
+            /* Font size */
             transition: background 0.3s;
+            /* Smooth background transition */
         }
 
+        /* Button hover effect */
         .button-group button:hover {
             background: #cc0000;
+            /* Darker red on hover */
         }
 
+        /* Responsive design for smaller screens */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
+                /* Stack elements vertically */
             }
 
             .sidebar {
                 width: 100%;
+                /* Full width */
                 height: auto;
+                /* Auto height */
                 position: static;
+                /* Remove fixed positioning */
                 border-right: none;
+                /* Remove right border */
                 border-bottom: 2px solid var(--primary-color);
+                /* Add bottom border */
                 box-shadow: none;
+                /* Remove shadow */
             }
 
             .content {
                 margin-left: 0;
+                /* Remove sidebar offset */
                 width: 100%;
+                /* Full width */
                 padding: 20px;
+                /* Reduced padding */
             }
 
             .form-container {
                 padding: 15px;
+                /* Reduced padding */
             }
         }
     </style>
 </head>
 
 <body>
+    <!-- Sidebar navigation -->
     <aside class="sidebar">
         <nav>
             <ul>
+                <!-- Navigation links -->
                 <li><a href="../web/dashboard.html">dashboard</a></li>
                 <li><a href="../web/add_building.html">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
@@ -241,21 +362,28 @@
         </nav>
     </aside>
 
+    <!-- Main content area -->
     <div class="content">
+        <!-- Form container for adding a building -->
         <div class="form-container">
             <h2>Add New Building</h2>
+            <!-- Building name input -->
             <div class="input-group">
                 <input type="text" id="buildingName" placeholder="Building Name">
             </div>
+            <!-- Location input -->
             <div class="input-group">
                 <input type="text" id="location" placeholder="Location">
             </div>
+            <!-- Number of floors input -->
             <div class="input-group">
                 <input type="number" id="floors" placeholder="Number of Floors" min="1">
             </div>
+            <!-- Domain number input -->
             <div class="input-group">
                 <input type="text" id="domainNumber" placeholder="Domain Number">
             </div>
+            <!-- Action buttons -->
             <div class="button-group">
                 <button onclick="addBuilding()">Add Building</button>
                 <button onclick="window.location.href='add_sensor.html'">Next</button>
