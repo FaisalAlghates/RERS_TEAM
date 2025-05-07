@@ -2,143 +2,234 @@
 <html lang="en">
 
 <head>
+    <!-- Set character encoding to UTF-8 -->
     <meta charset="UTF-8">
+    <!-- Ensure responsive viewport scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title -->
     <title>RERS System</title>
+    <!-- Include Font Awesome for icons -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
+        /* Import Orbitron font from Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+        /* Define CSS custom properties for theming */
         :root {
             --primary-color: #ff0000;
+            /* Primary color for the theme */
             --bg-gradient: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            /* Background gradient */
             --sidebar-gradient: linear-gradient(180deg, #2a2a2a, #000);
+            /* Sidebar gradient */
             --card-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            /* Card shadow effect */
         }
 
+        /* General body styling */
         body {
             margin: 0;
+            /* Remove default margin */
             padding: 0;
+            /* Remove default padding */
             background: var(--bg-gradient);
+            /* Apply background gradient */
             color: #fff;
+            /* Set text color to white */
             font-family: 'Orbitron', sans-serif;
+            /* Set font to Orbitron */
             display: flex;
+            /* Use flexbox for layout */
             height: 100vh;
+            /* Full viewport height */
             overflow: hidden;
+            /* Prevent scrolling */
         }
 
+        /* Sidebar styling */
         .sidebar {
             width: 250px;
+            /* Fixed sidebar width */
             background: var(--sidebar-gradient);
+            /* Apply sidebar gradient */
             padding: 20px;
+            /* Inner padding */
             position: fixed;
+            /* Fix sidebar position */
             height: 100vh;
+            /* Full viewport height */
             box-shadow: 4px 0 15px rgba(255, 0, 0, 0.5);
+            /* Sidebar shadow */
             border-right: 2px solid var(--primary-color);
+            /* Right border */
         }
 
+        /* Sidebar navigation styling */
         .sidebar nav ul {
             list-style: none;
+            /* Remove bullet points */
             padding: 0;
+            /* Remove padding */
         }
 
+        /* Sidebar list items */
         .sidebar nav ul li {
             padding: 15px 0;
+            /* Vertical padding */
             text-align: center;
+            /* Center text */
         }
 
+        /* Sidebar link styling */
         .sidebar nav ul li a {
             color: var(--primary-color);
+            /* Link color */
             text-decoration: none;
+            /* Remove underline */
             font-size: 18px;
+            /* Font size */
             font-weight: bold;
+            /* Bold text */
             display: block;
+            /* Block-level element */
             padding: 10px;
+            /* Inner padding */
             border-radius: 5px;
+            /* Rounded corners */
         }
 
+        /* Sidebar link hover effect */
         .sidebar nav ul li a:hover {
             background: rgba(255, 0, 0, 0.2);
+            /* Semi-transparent background on hover */
             color: #fff;
+            /* White text on hover */
         }
 
+        /* Main content area */
         .content {
             margin-left: 270px;
+            /* Offset for sidebar */
             padding: 40px;
+            /* Inner padding */
             width: calc(100% - 270px);
+            /* Adjust width for sidebar */
             text-align: center;
+            /* Center text */
         }
 
+        /* Clock container styling */
         #clock-container {
             display: flex;
+            /* Flexbox layout */
             justify-content: center;
+            /* Center horizontally */
             align-items: center;
+            /* Center vertically */
             height: 300px;
+            /* Fixed height */
             margin-top: 50px;
+            /* Top margin */
         }
 
+        /* Clock text styling */
         #clock {
             font-size: 160px;
+            /* Large font size */
             color: var(--primary-color);
+            /* Red text color */
             text-shadow: 0 0 40px rgba(255, 0, 0, 1),
                 0 0 60px rgba(255, 0, 0, 0.8),
                 0 0 80px rgba(255, 0, 0, 0.6),
                 0 0 100px rgba(255, 0, 0, 0.4);
+            /* Multi-layered text shadow */
             font-family: 'Orbitron', sans-serif;
+            /* Orbitron font */
             display: block;
+            /* Block-level element */
             letter-spacing: 10px;
+            /* Letter spacing */
             animation: pulse 1.5s infinite alternate;
+            /* Pulse animation */
         }
 
+        /* Pulse animation keyframes */
         @keyframes pulse {
             0% {
                 transform: scale(1);
+                /* Normal size */
             }
 
             100% {
                 transform: scale(1.05);
+                /* Slightly enlarged */
             }
         }
 
+        /* Glow effect styling */
         .glow {
             position: absolute;
+            /* Absolute positioning */
             bottom: 10%;
+            /* Position near bottom */
             width: 100%;
+            /* Full width */
             height: 80px;
+            /* Fixed height */
             background: radial-gradient(circle, rgba(255, 0, 0, 0.9) 10%, rgba(0, 0, 0, 0) 80%);
+            /* Red glow gradient */
             filter: blur(30px);
+            /* Blur effect */
         }
 
+        /* Loading indicator styling */
         .loading {
             display: none;
+            /* Hidden by default */
             font-size: 16px;
+            /* Font size */
             color: var(--primary-color);
+            /* Red text color */
         }
 
+        /* Loading spinner pseudo-element */
         .loading::before {
             content: "";
+            /* Empty content */
             display: inline-block;
+            /* Inline-block display */
             width: 16px;
+            /* Spinner size */
             height: 16px;
+            /* Spinner size */
             border: 2px solid var(--primary-color);
+            /* Border color */
             border-top-color: transparent;
+            /* Transparent top border */
             border-radius: 50%;
+            /* Circular shape */
             animation: spin 1s linear infinite;
+            /* Spin animation */
             margin-right: 8px;
+            /* Right margin */
         }
 
+        /* Spin animation keyframes */
         @keyframes spin {
             to {
                 transform: rotate(360deg);
+                /* Full rotation */
             }
         }
     </style>
 </head>
 
 <body>
+    <!-- Sidebar navigation -->
     <aside class="sidebar">
         <nav>
             <ul>
+                <!-- Navigation links -->
                 <li><a href="../web/dashboard.html">dashboard</a></li>
                 <li><a href="../web/add_building.html">Add Buildings</a></li>
                 <li><a href="../web/monitoring.html">Monitoring</a></li>
@@ -150,24 +241,32 @@
         </nav>
     </aside>
 
+    <!-- Main content area -->
     <main class="content">
+        <!-- Dashboard section -->
         <section id="dashboard">
             <h1>Welcome to RERS System</h1>
+            <!-- User greeting message -->
             <p id="userGreeting">Monitor and manage your emergency response efficiently.</p>
+            <!-- Loading indicator -->
             <p class="loading" id="loading">Loading user data...</p>
         </section>
 
+        <!-- Clock display section -->
         <section id="clock-container">
             <span id="clock"></span>
+            <!-- Glow effect element -->
             <div class="glow"></div>
         </section>
     </main>
 
     <script type="module">
+        /* Import Firebase SDK modules */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
+        /* Firebase configuration object */
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -177,47 +276,67 @@
             appId: "1:432558250053:web:07fc91665244a2d93feb2c"
         };
 
+        /* Initialize Firebase app */
         const app = initializeApp(firebaseConfig);
+        /* Initialize Firebase Authentication */
         const auth = getAuth(app);
+        /* Initialize Firestore database */
         const db = getFirestore(app);
 
+        /* Handle authentication state changes */
         onAuthStateChanged(auth, async (user) => {
+            /* Get DOM elements */
             const loading = document.getElementById("loading");
             const userGreeting = document.getElementById("userGreeting");
 
+            /* Show loading indicator */
             loading.style.display = "block";
 
+            /* Check if user is authenticated */
             if (user) {
                 try {
+                    /* Fetch user data from Firestore */
                     const userDoc = await getDoc(doc(db, "users", user.uid));
                     if (userDoc.exists()) {
+                        /* Update greeting with user name */
                         const userData = userDoc.data();
                         userGreeting.textContent = `Welcome, ${userData.name}! Monitor and manage your emergency response efficiently.`;
                     } else {
+                        /* Display message if user profile not found */
                         userGreeting.textContent = "User profile not found.";
                     }
                 } catch (error) {
+                    /* Handle errors during user data fetch */
                     console.error("Error fetching user data:", error);
                     userGreeting.textContent = "Error loading user profile.";
                 }
             } else {
+                /* Redirect to login page if not authenticated */
                 history.pushState({}, '', '../web/login Page.html');
                 window.location.href = '../web/login Page.html';
             }
 
+            /* Hide loading indicator */
             loading.style.display = "none";
         });
 
+        /* Function to update clock display */
         function updateClock() {
             const now = new Date();
+            /* Format time components */
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
+            /* Update clock display */
             document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
         }
+        /* Update clock every second */
         setInterval(updateClock, 1000);
+        /* Initial clock update */
         updateClock();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9390c0b5cebbbd28',t:'MTc0NjExNzk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <!-- Cloudflare challenge integration script -->
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'9390c0b5cebbbd28',t:'MTc0NjExNzk2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+</body>
 
 </html>
