@@ -1,140 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <!-- Set character encoding to UTF-8 -->
     <meta charset="UTF-8">
+    <!-- Ensure responsive viewport scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title -->
     <title>Login | RERS System</title>
+    <!-- Include Font Awesome for icons -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
+        /* Import Orbitron font from Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
+        /* General body styling */
         body {
             margin: 0;
+            /* Remove default margin */
             padding: 0;
+            /* Remove default padding */
             background: radial-gradient(circle, rgba(10, 10, 10, 1) 10%, rgba(0, 0, 0, 1) 80%);
+            /* Radial gradient background */
             color: #fff;
+            /* White text color */
             font-family: 'Orbitron', sans-serif;
+            /* Orbitron font */
             display: flex;
+            /* Flexbox layout */
             height: 100vh;
+            /* Full viewport height */
             align-items: center;
+            /* Center vertically */
             justify-content: center;
+            /* Center horizontally */
             flex-direction: column;
+            /* Stack elements vertically */
             text-align: center;
+            /* Center text */
         }
 
+        /* Clock display styling */
         .clock {
             font-size: 50px;
+            /* Large font size */
             font-weight: bold;
+            /* Bold text */
             text-align: center;
+            /* Center text */
             color: red;
+            /* Red text color */
             text-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+            /* Red glow effect */
             margin-bottom: 30px;
+            /* Bottom margin */
         }
 
+        /* Login container styling */
         .login-container {
             background: rgba(255, 255, 255, 0.1);
+            /* Semi-transparent background */
             padding: 30px;
+            /* Inner padding */
             border-radius: 15px;
+            /* Rounded corners */
             box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            /* Red shadow effect */
             width: 90%;
+            /* Responsive width */
             max-width: 400px;
+            /* Maximum width */
             animation: fadeIn 1s ease-in-out;
+            /* Fade-in animation */
         }
 
+        /* Login container heading */
         .login-container h2 {
             margin-bottom: 20px;
+            /* Bottom margin */
         }
 
+        /* Input field styling */
         .login-container input {
             width: 100%;
+            /* Full width */
             padding: 10px;
+            /* Inner padding */
             margin: 10px 0;
+            /* Vertical margin */
             border-radius: 5px;
+            /* Rounded corners */
             border: none;
+            /* No border */
             font-size: 16px;
+            /* Font size */
             background: rgba(255, 255, 255, 0.2);
+            /* Semi-transparent background */
             color: #fff;
+            /* White text color */
         }
 
+        /* Login button styling */
         .login-button {
             padding: 15px;
+            /* Inner padding */
             background: red;
+            /* Red background */
             color: white;
+            /* White text */
             font-weight: bold;
+            /* Bold text */
             border: none;
+            /* No border */
             border-radius: 5px;
+            /* Rounded corners */
             cursor: pointer;
+            /* Pointer cursor */
             font-size: 18px;
+            /* Font size */
             transition: 0.3s;
+            /* Smooth transition */
             width: 100%;
+            /* Full width */
         }
 
+        /* Login button hover effect */
         .login-button:hover {
             background: darkred;
+            /* Darker red on hover */
         }
 
+        /* Signup link styling */
         .signup-link {
             margin-top: 10px;
+            /* Top margin */
             font-size: 14px;
+            /* Font size */
         }
 
+        /* Signup link anchor styling */
         .signup-link a {
             color: red;
+            /* Red text color */
             text-decoration: none;
+            /* No underline */
             font-weight: bold;
+            /* Bold text */
         }
 
+        /* Signup link hover effect */
         .signup-link a:hover {
             text-decoration: underline;
+            /* Underline on hover */
         }
 
+        /* Fade-in animation keyframes */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            /* Start invisible and shifted up */
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            /* End fully visible and in position */
         }
 
+        /* Loading indicator styling */
         .loading {
             display: none;
+            /* Hidden by default */
             font-size: 16px;
+            /* Font size */
             color: red;
+            /* Red text color */
         }
 
+        /* Loading spinner pseudo-element */
         .loading::before {
             content: "";
+            /* Empty content */
             display: inline-block;
+            /* Inline-block display */
             width: 16px;
+            /* Spinner size */
             height: 16px;
+            /* Spinner size */
             border: 2px solid red;
+            /* Red border */
             border-top-color: transparent;
+            /* Transparent top border */
             border-radius: 50%;
+            /* Circular shape */
             animation: spin 1s linear infinite;
+            /* Spin animation */
             margin-right: 8px;
+            /* Right margin */
         }
 
+        /* Spin animation keyframes */
         @keyframes spin {
             to {
                 transform: rotate(360deg);
+                /* Full rotation */
             }
         }
     </style>
 </head>
+
 <body>
 
+    <!-- Clock display -->
     <div class="clock" id="clock">00:00:00</div>
-    
+
+    <!-- Login form container -->
     <div class="login-container">
         <h2>Login</h2>
+        <!-- Email input field -->
         <input type="email" id="email" placeholder="Email" required>
+        <!-- Password input field -->
         <input type="password" id="password" placeholder="Password" required>
+        <!-- Login button -->
         <button class="login-button" id="loginButton">Login</button>
+        <!-- Loading indicator -->
         <p class="loading" id="loading">Logging in...</p>
+        <!-- Signup link -->
         <div class="signup-link">Don't have an account? <a href="signup%20Page.html">Sign up</a></div>
     </div>
-    
+
     <script type="module">
+        /* Import Firebase SDK modules */
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
+        /* Firebase configuration object */
         const firebaseConfig = {
             apiKey: "AIzaSyAurJx-nSpVdj0ctPx8agoIIVTi8k3Wtpg",
             authDomain: "rersweb.firebaseapp.com",
@@ -146,34 +249,43 @@
             measurementId: "G-WEK79FH0J6"
         };
 
+        /* Initialize Firebase app */
         const app = initializeApp(firebaseConfig);
+        /* Initialize Firebase Authentication */
         const auth = getAuth(app);
 
+        /* Add click event listener to login button */
         document.getElementById("loginButton").addEventListener("click", async () => {
+            /* Get input values */
             const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value;
             const loginButton = document.getElementById("loginButton");
             const loading = document.getElementById("loading");
 
+            /* Validate input fields */
             if (!email || !password) {
                 alert("Please fill in all fields.");
                 return;
             }
 
+            /* Validate email format */
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 alert("Please enter a valid email address.");
                 return;
             }
 
+            /* Disable button and show loading indicator */
             loginButton.disabled = true;
             loading.style.display = "block";
 
             try {
+                /* Attempt to sign in with email and password */
                 await signInWithEmailAndPassword(auth, email, password);
                 alert("✅ Login successful!");
-                // Removed history.pushState to avoid errors in file:// protocol
+                /* Redirect to dashboard */
                 window.location.href = "dashboard.html";
             } catch (error) {
+                /* Handle login errors */
                 let errorMessage = "Login failed. Please try again.";
                 if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
                     errorMessage = "Invalid email or password.";
@@ -183,25 +295,32 @@
                 alert(`❌ ${errorMessage}`);
                 console.error("Login error:", error);
             } finally {
+                /* Re-enable button and hide loading indicator */
                 loginButton.disabled = false;
                 loading.style.display = "none";
             }
         });
 
+        /* Function to update clock display */
         function updateClock() {
             const clockElement = document.getElementById("clock");
             if (!clockElement) return;
 
             const now = new Date();
+            /* Format time components */
             let hours = now.getHours().toString().padStart(2, "0");
             let minutes = now.getMinutes().toString().padStart(2, "0");
             let seconds = now.getSeconds().toString().padStart(2, "0");
 
+            /* Update clock display */
             clockElement.innerText = `${hours}:${minutes}:${seconds}`;
         }
 
+        /* Update clock every second */
         setInterval(updateClock, 1000);
+        /* Initial clock update */
         updateClock();
     </script>
 </body>
+
 </html>
