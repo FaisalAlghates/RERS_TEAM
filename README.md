@@ -4,6 +4,21 @@ RERS (Rapid Emergency Response System) is an IoT-enabled emergency monitoring pl
 
 The system provides a centralized interface for managing buildings, sensors, cameras, monitoring emergency conditions, and generating reports. It integrates a web-based dashboard with Firebase for real-time data synchronization and supports IoT sensor communication through an ESP32 device.
 
+**Live demo:** https://faisalalghates.github.io/RERS_TEAM/ (sample data, any email and password work, nothing is sent anywhere; the sensor readings and cameras are simulated, and there is a button to rehearse a gas leak or a fire).
+
+## Run it
+
+```bash
+npm install
+npm start   # http://localhost:3000 (demo mode)
+```
+
+Open `/?mode=firebase` to use the real backend: Firebase Auth, Firestore, and the Realtime Database that the ESP32 writes (`/house/temp`, `/house/humidity`, `/house/gas-leak`). The ESP32 sketch is `esp_code.txt`: copy it into the Arduino IDE and fill in your own Wi-Fi and Firebase details (they are placeholders in this repository).
+
+The dashboard in `web/` is a single-page app with no build step. The first version's pages are kept in `legacy-web/`.
+
+> The alert thresholds in `web/config.js` are editable defaults for the demo, not certified safety limits.
+
 ## Features
 
 * User registration and authentication
